@@ -1,7 +1,7 @@
 const { spawn } = require('child_process');
 
 const nextBin = require.resolve('next/dist/bin/next');
-const BASE_PATH = '/LittleJobHelper';
+const BASE_PATH = '/WorkLedger';
 const PORT = '3536';
 
 console.log('正在启动开发服务器...');

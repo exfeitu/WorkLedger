@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
  */
 
 test("复盘心得：新建 → 富文本输入 → 搜索 → 编辑 → 删除", async ({ page }) => {
-  await page.goto("/LittleJobHelper/memo");
+  await page.goto("/WorkLedger/memo");
 
   // 新建心得
   await page.getByRole("button", { name: "+ 新建心得" }).click();
@@ -41,7 +41,7 @@ test("复盘心得：新建 → 富文本输入 → 搜索 → 编辑 → 删除
 
 test("全局搜索：主页搜「工资」命中备忘录", async ({ page }) => {
   // 先在备忘录页创建一条含「工资」的笔记
-  await page.goto("/LittleJobHelper/memo");
+  await page.goto("/WorkLedger/memo");
   await page.getByRole("button", { name: "+ 新建心得" }).click();
   await page.getByRole("textbox", { name: "标题" }).fill("工资核算流程复盘");
   await page.locator(".rich-text-area").fill("涉及工资表与绩效奖金");
@@ -49,13 +49,13 @@ test("全局搜索：主页搜「工资」命中备忘录", async ({ page }) => 
   await expect(page.getByText("工资核算流程复盘").first()).toBeVisible();
 
   // 回到主页全局搜索
-  await page.goto("/LittleJobHelper");
+  await page.goto("/WorkLedger");
   await page.getByRole("textbox", { name: "搜索", exact: true }).fill("工资");
   await expect(page.getByText("工资核算流程复盘").first()).toBeVisible();
 });
 
 test("周期备忘：新建 → 添加步骤与易错点 → 详情勾选进度", async ({ page }) => {
-  await page.goto("/LittleJobHelper/memo");
+  await page.goto("/WorkLedger/memo");
 
   // 切到周期备忘 tab
   await page.getByRole("tab", { name: "周期备忘" }).click();

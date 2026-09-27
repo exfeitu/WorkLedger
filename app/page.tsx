@@ -23,16 +23,12 @@ import {
   isTodoActive,
   isTodoArchived,
   syncLinkedItems,
-  toPinyin,
-  toPinyinInitials,
 } from "@/lib/utils";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
-import { EventItem, SearchResult, TodoItem } from "@/types";
+import { EventItem, TodoItem } from "@/types";
 import { useAppData } from "@/hooks/use-app-data";
-import { htmlToText, memoProgress, memoSearchText } from "@/lib/memo";
-
-/** 搜索结果 + 拼音字段（预计算，避免每次按键重复转换） */
-type SearchItem = SearchResult & { pinyin: string; initials: string };
+import { buildSearchIndex, findSearchResults } from "@/lib/search-index";
+import { deleteTodos, deleteWorkRecord, restoreTodo, setTodosStatus, upsertTodo, upsertWorkRecord } from "@/lib/ledger-operations";
 
 export default function HomePage() {
   const {
@@ -88,136 +84,34 @@ export default function HomePage() {
   const linkedTodoTitles = useMemo(() => Object.fromEntries(todos.map((todo) => [todo.id, todo.title])), [todos]);
   const linkedEventTitles = useMemo(() => Object.fromEntries(events.map((event) => [event.id, event.title])), [events]);
 
-  // 预计算全部搜索项（含拼音），仅在数据变化时重建
-  const allSearchItems = useMemo<SearchItem[]>(() => {
-    const build = (items: SearchItem[]) => items;
-    return build([
-      ...todos.map((todo) => {
-        const text = `${todo.title} ${todo.department ?? ""} ${todo.contactPerson ?? ""} ${todo.remarks ?? ""} ${todo.tags.join(" ")}`;
-        return {
-          id: `todo-${todo.id}`,
-          kind: "todo" as const,
-          title: todo.title,
-          snippet: [todo.department, todo.contactPerson, todo.remarks].filter(Boolean).join(" · ") || "待办事项",
-          dateLabel: todo.dueDate ? `截止 ${formatDateTime(todo.dueDate)}` : "未设置截止时间",
-          dateValue: todo.dueDate,
-          tags: todo.tags,
-          pinyin: toPinyin(text),
-          initials: toPinyinInitials(text),
-        };
-      }),
-      ...events.map((event) => {
-        const text = `${event.title} ${event.detail ?? ""} ${event.tags.join(" ")}`;
-        return {
-          id: `event-${event.id}`,
-          kind: "event" as const,
-          title: event.title,
-          snippet: event.detail ?? "工作记录",
-          dateLabel: formatDateTime(event.startTime),
-          dateValue: event.startTime,
-          tags: event.tags,
-          pinyin: toPinyin(text),
-          initials: toPinyinInitials(text),
-        };
-      }),
-      ...memos.map((memo) => {
-        const text = memoSearchText(memo);
-        const progress = memo.type === "checklist" ? memoProgress(memo) : null;
-        return {
-          id: `memo-${memo.id}`,
-          kind: "memo" as const,
-          title: memo.title,
-          snippet:
-            memo.type === "checklist"
-              ? progress && progress.total > 0
-                ? `周期备忘 · ${progress.completed}/${progress.total} 步`
-                : "周期备忘"
-              : htmlToText(memo.content ?? "").slice(0, 80) || "复盘心得",
-          dateLabel: memo.date ? `备忘 ${memo.date}` : "备忘录",
-          dateValue: memo.date,
-          tags: memo.tags,
-          pinyin: toPinyin(text),
-          initials: toPinyinInitials(text),
-        };
-      }),
-    ]);
-  }, [events, todos, memos]);
-
-  // 过滤（依赖 query 变化；拼音支持全拼 + 首字母）
-  const searchResults = useMemo<SearchResult[]>(() => {
-    const normalizedQuery = searchQuery.trim().toLowerCase();
-    if (!normalizedQuery) return [];
-    return allSearchItems.filter((result) => {
-      const haystack = `${result.title} ${result.snippet} ${result.tags.join(" ")}`.toLowerCase();
-      return (
-        haystack.includes(normalizedQuery) ||
-        result.pinyin.includes(normalizedQuery) ||
-        result.initials.includes(normalizedQuery)
-      );
-    });
-  }, [allSearchItems, searchQuery]);
+  const allSearchItems = useMemo(() => buildSearchIndex(events, todos, memos), [events, todos, memos]);
+  const searchResults = useMemo(() => findSearchResults(allSearchItems, searchQuery), [allSearchItems, searchQuery]);
 
   const handleSaveTask = (todo: TodoItem) => {
-    const isUpdate = todos.some((t) => t.id === todo.id);
-    const nextTodos = isUpdate
-      ? todos.map((t) => (t.id === todo.id ? todo : t))
-      : [...todos, todo];
-
-    setData(syncLinkedItems(events, nextTodos));
+    setData(upsertTodo({ events, todos }, todo));
     setShowTaskFormPanel(false);
     setEditingTodo(undefined);
   };
 
   const handleSaveWorkRecord = (event: EventItem, linkedTodoId: string | null) => {
-    const isUpdate = events.some((e) => e.id === event.id);
-    const nextEvents = isUpdate
-      ? events.map((e) => (e.id === event.id ? event : e))
-      : [...events, event];
-
-    const nextTodos = linkedTodoId
-      ? todos.map((todo) =>
-          todo.id === linkedTodoId
-            ? { ...todo, linkedEventIds: Array.from(new Set([...(todo.linkedEventIds ?? []), event.id])) }
-            : todo,
-        )
-      : isUpdate
-        ? todos.map((todo) => ({
-            ...todo,
-            linkedEventIds: (todo.linkedEventIds ?? []).filter((id) => id !== event.id),
-          }))
-        : todos;
-
-    setData(syncLinkedItems(nextEvents, nextTodos));
+    setData(upsertWorkRecord({ events, todos }, event, linkedTodoId));
     setShowWorkRecordPanel(false);
     setEditingEvent(undefined);
   };
 
   const handleDeleteEvent = (id: string) => {
-    const nextEvents = events.filter((e) => e.id !== id);
-    const nextTodos = todos.map((todo) => ({
-      ...todo,
-      linkedEventIds: (todo.linkedEventIds ?? []).filter((eid) => eid !== id),
-    }));
-    setData(syncLinkedItems(nextEvents, nextTodos));
+    setData(deleteWorkRecord({ events, todos }, id));
     setEditingEvent(undefined);
   };
 
   const handleDeleteTodo = (id: string) => {
-    const nextTodos = todos.filter((t) => t.id !== id);
-    const nextEvents = events.map((event) => ({
-      ...event,
-      linkedTodoIds: (event.linkedTodoIds ?? []).filter((tid) => tid !== id),
-    }));
-    setData(syncLinkedItems(nextEvents, nextTodos));
+    setData(deleteTodos({ events, todos }, new Set([id])));
     setEditingTodo(undefined);
   };
 
   // 归档恢复：一键改回"进行中"，回到待办列表
   const handleRestoreTodo = (id: string) => {
-    const nextTodos = todos.map((t) =>
-      t.id === id ? { ...t, status: "in_progress" as const, updatedAt: new Date().toISOString() } : t,
-    );
-    setData(syncLinkedItems(events, nextTodos));
+    setData(restoreTodo({ events, todos }, id, new Date().toISOString()));
   };
 
   // 批量选择
@@ -233,24 +127,14 @@ export default function HomePage() {
   const batchDeleteTodos = useCallback(() => {
     if (selectedTodoIds.size === 0) return;
     if (!confirm(`确定删除选中的 ${selectedTodoIds.size} 个待办？此操作不可恢复。`)) return;
-    const nextTodos = todos.filter((t) => !selectedTodoIds.has(t.id));
-    const nextEvents = events.map((event) => ({
-      ...event,
-      linkedTodoIds: (event.linkedTodoIds ?? []).filter((tid) => !selectedTodoIds.has(tid)),
-    }));
-    setData(syncLinkedItems(nextEvents, nextTodos));
+    setData(deleteTodos({ events, todos }, selectedTodoIds));
     setSelectedTodoIds(new Set());
     setTodoSelectionMode(false);
   }, [selectedTodoIds, todos, events, setData]);
 
   const batchSetStatus = useCallback((status: TodoItem["status"]) => {
     if (selectedTodoIds.size === 0) return;
-    const nextTodos = todos.map((t) =>
-      selectedTodoIds.has(t.id)
-        ? { ...t, status, updatedAt: new Date().toISOString() }
-        : t,
-    );
-    setData(syncLinkedItems(events, nextTodos));
+    setData(setTodosStatus({ events, todos }, selectedTodoIds, status, new Date().toISOString()));
     setSelectedTodoIds(new Set());
     setTodoSelectionMode(false);
   }, [selectedTodoIds, todos, events, setData]);

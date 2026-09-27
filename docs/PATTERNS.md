@@ -1,6 +1,6 @@
 # 常见改动模式
 
-每个模式按步骤排列。遵循这些步骤可以避免常见的遗漏。
+每个模式按步骤排列。先读 `docs/AI-START-HERE.md` 并运行 `git status --short --branch`，不要覆盖当前其他 Agent 的未提交改动。遵循这些步骤可以避免常见的遗漏。
 
 ---
 
@@ -30,8 +30,8 @@
 
 1. 在 `components/` 下创建文件，以 `"use client"` 开头
 2. Props 类型定义在组件文件内，用 `type` 不用 `interface`
-3. 样式按职责加入 `styles/variables.css`、`layout.css`、`timeline.css`、`components.css` 或 `modal.css`
-4. `app/globals.css` 主要维护模块 `@import` 顺序；不要把大段组件样式重新堆回 `globals.css`
+3. 样式放到对应模块：时间轴 → `timeline.css`；首页与统计 → `workspace.css`；备忘录 → `memo.css`；归档 → `archive.css`；通用 UI → `components.css`；弹窗 → `modal.css`
+4. `app/globals.css` 只维护模块 `@import` 顺序；修改前先定位原选择器，避免末尾叠加覆盖规则
 
 ---
 
@@ -42,16 +42,16 @@
 3. 表单状态自管理，通过 `onSave(data)` + `onClose()` 回调与父通信
 4. 点击遮罩层关闭：`e.target === e.currentTarget` 判断
 5. 标签选择用 chip 模式：预设标签 `.chip-button.chip-tag` + 自定义输入
-6. 保存逻辑在 `page.tsx` 回调中执行（`syncLinkedItems` + `setData`）
+6. 页面回调只负责选择/弹窗状态；Event/Todo 业务变更调用 `lib/ledger-operations.ts`，再 `setData(next)`
 
 ---
 
 ## 5. 修改双向关联
 
-1. 修改 events 或 todos 后，必须调用 `syncLinkedItems(nextEvents, nextTodos)`
-2. 新 TodoItem 关联 Event 时，需同时更新 Event 的 `linkedTodoIds`
-3. 删除 Event 时，需清理所有 Todo 中对该 Event 的 `linkedEventIds` 引用
-4. **参考实现**：`app/page.tsx` 中 `handleSaveTask()` 和 `handleSaveWorkRecord()`
+1. 先在 `lib/ledger-operations.ts` 里实现纯数据操作（入参：旧快照 + 操作参数；出参：新 events/todos 快照），补 `lib/__tests__/ledger-operations.test.ts`。
+2. 所有 Event/Todo 变更必须保证 `linkedTodoIds` ↔ `linkedEventIds` 对称；`syncLinkedItems()` 会合并两端引用，**解绑须同时清除两侧**。
+3. 首页调用纯业务操作后执行 `setData(next)`；不要把存储副作用、弹窗开关或时间戳生成塞进纯函数。
+4. 日历页还有独立页面级修改路径；调整关联规则时必须同步检查 `app/calendar/page.tsx` 并补回归测试。
 
 ---
 

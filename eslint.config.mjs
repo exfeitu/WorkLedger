@@ -4,7 +4,7 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 export default defineConfig([
   ...nextVitals,
   {
-    name: "little-job-helper/overrides",
+    name: "work-ledger/overrides",
     rules: {
       // React Compiler 专属规则：本项目未启用 React Compiler，
       // 这些规则会误报既有（可用）模式，故关闭。保留核心的 rules-of-hooks / exhaustive-deps。

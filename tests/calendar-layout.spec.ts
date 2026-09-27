@@ -4,7 +4,7 @@ for (const width of [1440, 1100, 768, 390]) {
   test(`calendar layout ${width}px`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 1000 });
     await page.clock.setFixedTime(new Date("2026-09-20T12:00:00"));
-    await page.goto("/LittleJobHelper/calendar");
+    await page.goto("/WorkLedger/calendar");
     const main = page.locator(".calendar-main");
     const date = main.getByLabel("跳转日期");
     const title = main.getByRole("heading", { name: "2026年9月20日", exact: true });

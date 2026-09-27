@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const STORAGE_KEY = "little-job-helper-backup-reminder-date";
+const STORAGE_KEY = "work-ledger-backup-reminder-date";
 
 /**
  * 模块级标志：同一会话内只提醒一次（两个页面共享，避免首页/日历页各自弹一次）。

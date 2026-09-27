@@ -6,8 +6,9 @@ import {
   loadMemosFromStorage,
   loadTodosFromStorage,
 } from "@/lib/storage-local";
+import { LEGACY_GIST_FILENAME, LEGACY_STORAGE_KEYS } from "@/lib/storage-legacy";
 
-const GIST_FILENAME = "little-job-helper-data.json";
+const GIST_FILENAME = "work-ledger-data.json";
 const GIST_DESCRIPTION = "工作台账 · 工作数据";
 const GIST_API_BASE = "https://api.github.com";
 
@@ -63,16 +64,23 @@ function setSyncStatus(status: SyncStatus, error?: string | null): void {
 // 设置管理（Token + Gist ID 存在 LocalStorage）
 // ============================================================
 
-const STORAGE_KEY_SETTINGS = "little-job-helper-settings";
+const STORAGE_KEY_SETTINGS = "work-ledger-settings";
 
 export function loadSettings(): GistSettings | null {
   if (typeof window === "undefined") return null;
 
   try {
-    const data = localStorage.getItem(STORAGE_KEY_SETTINGS);
+    const current = localStorage.getItem(STORAGE_KEY_SETTINGS);
+    const legacy = current ? null : localStorage.getItem(LEGACY_STORAGE_KEYS.settings);
+    const data = current ?? legacy;
     if (!data) return null;
+
     const parsed = JSON.parse(data);
     if (parsed.token && parsed.gistId) {
+      if (!current) {
+        localStorage.setItem(STORAGE_KEY_SETTINGS, data);
+        localStorage.removeItem(LEGACY_STORAGE_KEYS.settings);
+      }
       return parsed as GistSettings;
     }
     return null;
@@ -86,6 +94,7 @@ export function saveSettings(settings: GistSettings): void {
 
   try {
     localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+    localStorage.removeItem(LEGACY_STORAGE_KEYS.settings);
   } catch (error) {
     console.error("Failed to save settings:", error);
   }
@@ -95,6 +104,7 @@ export function clearSettings(): void {
   if (typeof window === "undefined") return;
 
   localStorage.removeItem(STORAGE_KEY_SETTINGS);
+  localStorage.removeItem(LEGACY_STORAGE_KEYS.settings);
   _lastSyncAt = null;
   setSyncStatus("idle");
 }
@@ -127,7 +137,9 @@ async function findExistingGist(token: string): Promise<string | null> {
       files: Record<string, { filename: string }>;
     }> = await res.json();
 
-    const found = gists.find((g) => g.files && g.files[GIST_FILENAME]);
+    const found = gists.find((g) =>
+      g.files && (g.files[GIST_FILENAME] || g.files[LEGACY_GIST_FILENAME]),
+    );
     return found ? found.id : null;
   } catch {
     return null;
@@ -229,6 +241,30 @@ async function updateGist(
   }
 }
 
+async function migrateLegacyGistFilename(
+  token: string,
+  gistId: string,
+  content: string,
+): Promise<void> {
+  try {
+    const res = await fetch(`${GIST_API_BASE}/gists/${gistId}`, {
+      method: "PATCH",
+      headers: gistHeaders(token),
+      body: JSON.stringify({
+        files: {
+          [GIST_FILENAME]: { content },
+          [LEGACY_GIST_FILENAME]: null,
+        },
+      }),
+    });
+    if (!res.ok) {
+      console.warn("Failed to migrate legacy Gist filename:", res.status);
+    }
+  } catch (error) {
+    console.warn("Failed to migrate legacy Gist filename:", error);
+  }
+}
+
 /**
  * 从 Gist 拉取原始数据（含版本号，不做迁移）。
  * 兼容旧版云端数据：无 memos 字段时默认空数组，不报错。
@@ -248,8 +284,14 @@ async function fetchRawGist(
       files: Record<string, { content?: string }>;
     } = await res.json();
 
-    const file = data.files?.[GIST_FILENAME];
+    const currentFile = data.files?.[GIST_FILENAME];
+    const legacyFile = data.files?.[LEGACY_GIST_FILENAME];
+    const file = currentFile ?? legacyFile;
     if (!file?.content) return null;
+
+    if (!currentFile?.content && legacyFile?.content) {
+      await migrateLegacyGistFilename(token, gistId, legacyFile.content);
+    }
 
     const parsed = JSON.parse(file.content);
     if (!parsed.events || !parsed.todos) return null;

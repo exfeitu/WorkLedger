@@ -1,0 +1,500 @@
+/* ============================================================
+   备忘录模块
+   ============================================================ */
+
+/* 搜索结果类型徽标 */
+.pill-memo {
+  color: #a48bc0;
+}
+
+/* 顶部工具栏 */
+.memo-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.memo-tabs {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(108, 156, 120, 0.18);
+  border-radius: 999px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.memo-tab {
+  border: none;
+  background: none;
+  padding: 8px 16px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.memo-tab:hover {
+  color: var(--text);
+}
+
+.memo-tab-active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.memo-tab-active:hover {
+  color: #fff;
+}
+
+.memo-search-box {
+  flex: 1;
+  min-width: 200px;
+}
+
+.memo-search-box input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid rgba(108, 156, 120, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text);
+  outline: none;
+}
+
+.memo-search-box input:focus {
+  border-color: rgba(79, 143, 99, 0.35);
+}
+
+.memo-tag-filter select {
+  padding: 10px 14px;
+  border: 1px solid rgba(108, 156, 120, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text);
+  outline: none;
+  min-width: 120px;
+}
+
+.memo-add-button {
+  white-space: nowrap;
+}
+
+/* 列表头部 */
+.memo-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.memo-list-head h2 {
+  margin: 0;
+}
+
+.memo-count {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* 列表网格 */
+.memo-list {
+  display: grid;
+  gap: 14px;
+}
+
+.memo-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+  border: 1px dashed rgba(108, 156, 120, 0.3);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.memo-empty p {
+  margin: 0;
+}
+
+/* 卡片 */
+.memo-card {
+  cursor: pointer;
+  display: grid;
+  gap: 8px;
+}
+
+.memo-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.memo-type-badge {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  padding: 2px 10px;
+}
+
+.pill-memo-note {
+  color: #4f8f63;
+}
+
+.pill-memo-checklist {
+  color: #b7791f;
+}
+
+.memo-card-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.memo-card-edit {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 2px 6px;
+  border-radius: 8px;
+  opacity: 0.7;
+}
+
+.memo-card-edit:hover {
+  opacity: 1;
+  background: rgba(79, 143, 99, 0.1);
+}
+
+.memo-card-meta {
+  display: flex;
+  gap: 14px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.memo-card-snippet {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 进度条 */
+.memo-progress {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.memo-progress-done {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.memo-progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(108, 156, 120, 0.15);
+  overflow: hidden;
+}
+
+.memo-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.25s ease;
+}
+
+/* 步骤编辑 / 详情 */
+.memo-steps-editor {
+  display: grid;
+  gap: 8px;
+}
+
+.memo-step-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(108, 156, 120, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.memo-step-warning {
+  border-color: rgba(217, 109, 130, 0.45);
+  background: rgba(217, 109, 130, 0.06);
+}
+
+.memo-step-index {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(79, 143, 99, 0.12);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.memo-step-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid rgba(108, 156, 120, 0.18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text);
+  outline: none;
+}
+
+.memo-step-input:focus {
+  border-color: rgba(79, 143, 99, 0.35);
+}
+
+.memo-step-remove {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.8rem;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.memo-step-remove:hover {
+  color: var(--danger);
+}
+
+.memo-step-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.memo-step-add input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid rgba(108, 156, 120, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text);
+  outline: none;
+}
+
+.memo-step-content {
+  flex: 1;
+  min-width: 0;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.memo-step-completed {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.memo-warning-tag {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: #d9455f;
+  font-weight: 600;
+}
+
+/* 表单日期网格 */
+.memo-form-grid > div {
+  display: grid;
+  gap: 6px;
+}
+
+.memo-form-grid input[type="date"] {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid rgba(108, 156, 120, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text);
+  outline: none;
+}
+
+/* 详情弹窗 */
+.memo-detail-panel .modal-header h2 {
+  font-size: 1.1rem;
+}
+
+.memo-detail-meta {
+  display: flex;
+  gap: 14px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.memo-detail-body {
+  margin-bottom: 16px;
+}
+
+.memo-detail-steps {
+  display: grid;
+  gap: 8px;
+}
+
+.memo-detail-step .memo-step-content {
+  padding: 2px 0;
+}
+
+/* 富文本编辑器 */
+.rich-text-editor {
+  display: grid;
+  gap: 8px;
+}
+
+.rich-text-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid rgba(108, 156, 120, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.rich-text-tool-btn {
+  border: none;
+  background: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
+
+.rich-text-tool-btn:hover {
+  background: rgba(79, 143, 99, 0.12);
+}
+
+.rich-text-tool-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(108, 156, 120, 0.2);
+  margin: 0 2px;
+}
+
+.rich-text-area {
+  min-height: 180px;
+  padding: 12px 14px;
+  border: 1px solid rgba(108, 156, 120, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text);
+  outline: none;
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+
+.rich-text-area:focus {
+  border-color: rgba(79, 143, 99, 0.35);
+}
+
+.rich-text-area:empty:before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.rich-text-area img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.rich-text-area ul,
+.rich-text-area ol {
+  padding-left: 22px;
+}
+
+.rich-text-content {
+  line-height: 1.8;
+  font-size: 0.95rem;
+  color: var(--text);
+  overflow-wrap: break-word;
+}
+
+.rich-text-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.rich-text-content ul,
+.rich-text-content ol {
+  padding-left: 22px;
+}
+
+.rich-text-content h1,
+.rich-text-content h2,
+.rich-text-content h3 {
+  margin: 14px 0 8px;
+}
+
+.rich-text-content blockquote {
+  margin: 10px 0;
+  padding: 8px 14px;
+  border-left: 3px solid var(--accent);
+  background: rgba(79, 143, 99, 0.06);
+  color: var(--muted);
+}
+
+/* 响应式 */
+@media (max-width: 700px) {
+  .memo-toolbar {
+    gap: 8px;
+  }
+
+  .memo-search-box {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .memo-card-top {
+    flex-wrap: wrap;
+  }
+
+  .rich-text-toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .memo-step-row {
+    flex-wrap: wrap;
+  }
+
+  .memo-step-add {
+    flex-wrap: wrap;
+  }
+
+  .memo-step-add .ghost-button {
+    width: 100%;
+  }
+}
+

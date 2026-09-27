@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 // 仅测试服务器可覆盖端口；项目 dev 约定仍为 3536。
 const testPort = process.env.E2E_PORT || "3536";
-const testURL = `http://localhost:${testPort}/LittleJobHelper`;
+const testURL = `http://localhost:${testPort}/WorkLedger`;
 
 /**
  * E2E 冒烟测试配置。

@@ -17,7 +17,7 @@ const events: EventItem[] = ["a", "b", "c", "d"].map((id, index) => ({
 }));
 
 async function loadFixture(page: Page, data = { events, todos }) {
-  await page.goto("/LittleJobHelper");
+  await page.goto("/WorkLedger");
   await page.getByRole("button", { name: "📊 导出", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "导出数据", exact: true });
   // 使用产品导入入口，在 Playwright 隔离浏览器中装载，不直接操作存储。

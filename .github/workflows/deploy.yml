@@ -37,6 +37,12 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
+      - name: Check architecture boundaries
+        run: npm run check:architecture
+
+      - name: Run type check
+        run: npm run typecheck
+
       - name: Run unit tests
         run: npm test
 

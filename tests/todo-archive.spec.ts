@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test";
 test("待办归档：完成后移入归档并可恢复", async ({ page }) => {
   const title = "归档测试任务";
 
-  await page.goto("/LittleJobHelper");
+  await page.goto("/WorkLedger");
 
   // 新建任务
   await page.getByRole("button", { name: "+ 添加任务" }).click();

@@ -1,4 +1,4 @@
-# AGENTS.md — Little Job Helper
+# AGENTS.md — Work Ledger
 
 浏览器端个人工作生命周期管理工具：时间轴工作回溯 + 待办管理 + 日历 + 备忘录/周期 SOP，单人使用，Next.js 16 静态导出 + GitHub Pages 部署。
 
@@ -21,9 +21,11 @@
 ## 常用命令
 
 ```bash
-npm run dev     # localhost:3536/LittleJobHelper
+npm run dev     # localhost:3536/WorkLedger
 npm run build   # 静态导出到 out/
 npm run lint    # ESLint
+npm run check:architecture # CSS 入口、模块依赖约束
+npm run typecheck # 全仓库 TypeScript 检查
 npm test        # vitest 单元测试
 ```
 
@@ -41,6 +43,9 @@ npm test        # vitest 单元测试
 | 8 | 不在组件中直接修改 events/todos 数组 | 必须经 `setData()` + `syncLinkedItems()` |
 | 9 | 在已授权范围内直接执行，不重复确认；缺少关键输入或涉及未授权的外部发布/付费/破坏性动作时才确认 | 高效执行且不扩大授权 |
 | 10 | 新增/修改数据字段时必须同步 migration、导入导出和 Gist 数据结构 | 保持旧数据与多端同步兼容 |
+| 11 | 先检查 git status；不得覆盖、清理、提交或发布其他人未完成的 WIP | 避免破坏并行 Agent 工作 |
+| 12 | 首页 Event/Todo 业务变更放在 `lib/ledger-operations.ts`，组件只调用 `setData()` | 保持纯函数可测、UI 与数据逻辑分离 |
+| 13 | `app/globals.css` 只放按顺序排列的 CSS import | 新功能样式放对应模块，避免全局样式再次膨胀 |
 
 ## 关键文件速查
 
@@ -58,6 +63,8 @@ npm test        # vitest 单元测试
 | `lib/storage-local.ts` | LocalStorage、自定义标签、JSON 导入导出 |
 | `lib/storage-gist.ts` | Gist 云同步、同步状态 |
 | `lib/utils.ts` | 纯函数：`syncLinkedItems`、树构建、格式化、拼音 |
+| `lib/ledger-operations.ts` | 工作记录/待办保存、删除、恢复、批量操作的纯业务层 |
+| `lib/search-index.ts`、`lib/search-results.ts` | 搜索索引及匹配/筛选/排序，页面仅组装 |
 | `lib/timeline-adaptive.ts` | 时间轴纯函数（待办碰撞聚合、最多 3 层记录、逐日统计、密度等级） |
 | `lib/memo.ts` | 备忘录纯函数：富文本转文本、搜索文本、排序、进度 |
 | `lib/constants.ts` | 共享常量（BASE_TAGS） |
@@ -65,6 +72,7 @@ npm test        # vitest 单元测试
 
 ## 详细文档
 
+- **`docs/AI-START-HERE.md` — 新 Agent 必读：任务→源码定位、依赖边界、验证流程及 WIP 安全**
 - `docs/ARCHITECTURE.md` — 完整架构：数据流、组件约定、CSS 规范、标签系统、时间轴系统、版本迁移
 - `docs/PATTERNS.md` — 常见改动模式：加字段、加页面、加组件、加弹窗、改存储结构
 - `docs/AI-DEVELOPMENT.md` — AI 辅助开发方法论和流程

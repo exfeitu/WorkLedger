@@ -6,16 +6,20 @@
 types.ts                    # 全局类型：EventItem, TodoItem, TodoTreeNode 等
 app/
   layout.tsx                # 根布局：lang="zh-CN"、ErrorBoundary
-  globals.css               # 样式入口：@import styles/ 模块 + 新增功能样式
+  globals.css               # 仅 @import，新增选择器放 styles/ 模块
   page.tsx                  # 首页：时间轴、待办树、搜索、今日记录、统计
   calendar/page.tsx         # 日历页：按天查看 + 添加日程
   memo/page.tsx             # 备忘录页：复盘心得 + 周期备忘
 styles/                     # CSS 按功能模块拆分（顺序即级联顺序）
   variables.css             # 根变量、基础元素、滚动条、body
   layout.css                # 页面骨架、header、面板、通用布局
-  timeline.css              # 横向时间轴
-  components.css            # 日记、标签、搜索、待办、日历、响应式
-  modal.css                 # 模态弹窗、各面板、按钮
+  timeline.css              # 自适应时间轴
+  legacy-timeline.css       # 旧版时间轴（双版本切换开发分支）
+  components.css            # 通用组件、日历、待办
+  modal.css                 # 弹窗和表单
+  workspace.css             # 首页、统计、批量操作、备份提醒
+  memo.css                  # 备忘录、富文本
+  archive.css               # 待办归档
 components/
   app-header.tsx            # 三页共用顶部导航栏（含同步状态指示）
   day-timeline.tsx          # 自适应时间轴工具栏、导航、滚轮、拖拽及详情选择
@@ -48,6 +52,9 @@ lib/
   storage-gist.ts           # Gist 云同步、同步状态
   utils.ts                  # 纯函数：syncLinkedItems、树构建、格式化、拼音、genId
   timeline-adaptive.ts      # 时间轴纯函数（模式、待办碰撞、记录 lane/overflow、统计、密度）
+  ledger-operations.ts      # Event/Todo 的纯业务变更，统一返回双向关联快照
+  search-index.ts           # Todo/Event/Memo 搜索索引构建与全文/拼音匹配
+  search-results.ts         # 搜索结果类型/标签过滤和排序
   memo.ts                   # 备忘录纯函数（正文转文本、搜索、排序、进度）
   constants.ts              # 共享常量（BASE_TAGS）
   sample-data.ts            # 示例数据（当前未使用，保留作参考）
@@ -137,10 +144,12 @@ Memo 操作 → setMemos()（独立撤销历史）──────────
 - 类名语义化：`.line-timeline`, `.todo-card`, `.search-results-wrap`
 - 内联 `style` 仅用于运行时动态值（位置、颜色变量），静态样式放 CSS
 - **禁止 Tailwind 或任何 CSS 框架**
-- 样式按模块拆分到 `styles/`，`globals.css` 仅做 `@import`（顺序即级联顺序，新增模块追加在末尾）+ 少量新增样式
+- 样式按模块拆分到 `styles/`，`globals.css` **仅做 `@import`**（顺序即级联顺序）；新增选择器放归属模块，不要继续向入口追加 CSS
 ## 工具函数分工
 
-- `lib/utils.ts`：纯函数，无副作用（`syncLinkedItems`、`buildTodoTree`、格式化、拼音、`genId`）
+- `lib/utils.ts`：共享函数（`syncLinkedItems`、`buildTodoTree`、格式化、拼音、`genId`）
+- `lib/ledger-operations.ts`：Event/Todo 的保存、删除、恢复、批量操作；无 UI/存储副作用，统一调用 `syncLinkedItems()`，页面只提交返回快照
+- `app/page.tsx`：仅决定何时调用操作、更新选择和弹窗状态；其他页面修改 Event/Todo 时也应逐步复用此业务层
 - `lib/timeline-adaptive.ts`：时间轴纯布局逻辑（可单测）
 - `lib/storage-*.ts`：有副作用（`localStorage`、`fetch`、`FileReader`、`Blob`）
 - 日期格式化统一用 `Intl.DateTimeFormat("zh-CN", ...)`，不用 `moment`/`dayjs`
@@ -184,4 +193,6 @@ Memo 操作 → setMemos()（独立撤销历史）──────────
 - `npm run lint`：ESLint 9 + `eslint-config-next`（关闭 React Compiler 专属规则）
 - `npm test`：Vitest 单元测试（纯函数 + buildCsv）
 - `npm run test:e2e`：Playwright 冒烟测试（需先 `npx playwright install chromium`）
-- CI（deploy.yml）：lint → test → build → 部署
+- `npm run check:architecture`：样式入口/纯业务层边界守卫
+- `npm run typecheck`：全仓库 TS 检查，包含 Vitest 测试文件
+- CI（deploy.yml）：lint → architecture → test → build → 部署

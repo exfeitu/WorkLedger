@@ -1,5 +1,5 @@
 {
-  "name": "little-job-helper",
+  "name": "work-ledger",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "check:architecture": "node scripts/check-architecture.mjs",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test"

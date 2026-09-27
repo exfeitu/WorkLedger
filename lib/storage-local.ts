@@ -1,11 +1,41 @@
 import { EventItem, MemoItem, TodoItem } from "@/types";
 import { CURRENT_DATA_VERSION, DataBundle, migrateData, parseVersion } from "@/lib/storage-migrate";
+import { LEGACY_STORAGE_KEYS } from "@/lib/storage-legacy";
 
-const STORAGE_KEY_EVENTS = "little-job-helper-events";
-const STORAGE_KEY_TODOS = "little-job-helper-todos";
-const STORAGE_KEY_VERSION = "little-job-helper-version";
-const STORAGE_KEY_CUSTOM_TAGS = "little-job-helper-custom-tags";
-const STORAGE_KEY_MEMOS = "little-job-helper-memos";
+const STORAGE_KEY_EVENTS = "work-ledger-events";
+const STORAGE_KEY_TODOS = "work-ledger-todos";
+const STORAGE_KEY_VERSION = "work-ledger-version";
+const STORAGE_KEY_CUSTOM_TAGS = "work-ledger-custom-tags";
+const STORAGE_KEY_MEMOS = "work-ledger-memos";
+
+let legacyStorageChecked = false;
+
+function ensureStorageNamespace(): void {
+  if (typeof window === "undefined" || legacyStorageChecked) return;
+
+  const pairs = [
+    [STORAGE_KEY_EVENTS, LEGACY_STORAGE_KEYS.events],
+    [STORAGE_KEY_TODOS, LEGACY_STORAGE_KEYS.todos],
+    [STORAGE_KEY_VERSION, LEGACY_STORAGE_KEYS.version],
+    [STORAGE_KEY_CUSTOM_TAGS, LEGACY_STORAGE_KEYS.customTags],
+    [STORAGE_KEY_MEMOS, LEGACY_STORAGE_KEYS.memos],
+  ] as const;
+
+  try {
+    for (const [currentKey, legacyKey] of pairs) {
+      const currentValue = localStorage.getItem(currentKey);
+      const legacyValue = localStorage.getItem(legacyKey);
+      if (currentValue === null && legacyValue !== null) {
+        localStorage.setItem(currentKey, legacyValue);
+      }
+      if (localStorage.getItem(currentKey) !== null) {
+        localStorage.removeItem(legacyKey);
+      }
+    }
+  } finally {
+    legacyStorageChecked = true;
+  }
+}
 
 // ============================================================
 // LocalStorage 读写（含版本号管理）
@@ -16,6 +46,7 @@ const STORAGE_KEY_MEMOS = "little-job-helper-memos";
  */
 function getStoredVersion(): number {
   if (typeof window === "undefined") return CURRENT_DATA_VERSION;
+  ensureStorageNamespace();
 
   try {
     const raw = localStorage.getItem(STORAGE_KEY_VERSION);
@@ -44,6 +75,7 @@ function setStoredVersion(version: number): void {
 
 export function loadEventsFromStorage(): EventItem[] | null {
   if (typeof window === "undefined") return null;
+  ensureStorageNamespace();
 
   try {
     const data = localStorage.getItem(STORAGE_KEY_EVENTS);
@@ -56,6 +88,7 @@ export function loadEventsFromStorage(): EventItem[] | null {
 
 export function loadTodosFromStorage(): TodoItem[] | null {
   if (typeof window === "undefined") return null;
+  ensureStorageNamespace();
 
   try {
     const data = localStorage.getItem(STORAGE_KEY_TODOS);
@@ -68,6 +101,7 @@ export function loadTodosFromStorage(): TodoItem[] | null {
 
 export function loadMemosFromStorage(): MemoItem[] | null {
   if (typeof window === "undefined") return null;
+  ensureStorageNamespace();
 
   try {
     const data = localStorage.getItem(STORAGE_KEY_MEMOS);
@@ -149,6 +183,7 @@ export function saveMemosToStorage(memos: MemoItem[]): void {
  */
 export function loadCustomTags(): string[] {
   if (typeof window === "undefined") return [];
+  ensureStorageNamespace();
 
   try {
     const data = localStorage.getItem(STORAGE_KEY_CUSTOM_TAGS);
@@ -210,6 +245,13 @@ export function clearAllStorage(): void {
   localStorage.removeItem(STORAGE_KEY_VERSION);
   localStorage.removeItem(STORAGE_KEY_CUSTOM_TAGS);
   localStorage.removeItem(STORAGE_KEY_MEMOS);
+  [
+    LEGACY_STORAGE_KEYS.events,
+    LEGACY_STORAGE_KEYS.todos,
+    LEGACY_STORAGE_KEYS.version,
+    LEGACY_STORAGE_KEYS.customTags,
+    LEGACY_STORAGE_KEYS.memos,
+  ].forEach((key) => localStorage.removeItem(key));
 }
 
 // ============================================================

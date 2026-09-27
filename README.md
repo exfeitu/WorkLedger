@@ -5,8 +5,7 @@
 ## 当前功能
 
 - **自适应时间轴**：固定 1/3/7/30 天切换，滚轮跨阈值切换展示密度，拖拽平移、日期跳转和“今天”定位。1 天用真实时间圆点和最多 3 层工作块；3 天看时间分布；7 天看优先级数量和工时；30 天看六级密度，点击日期回到详细视图。单项先查看侧栏详情，再按需编辑。
-- **轻量待办节点**：待办按高/中/低三行显示为小型胶囊节点；1–2 天近景按 2 小时、3–10 天按天、远景按周聚合，同一时间桶多项任务才显示数量并展开
-- **工作记录时间条**：工作记录固定在主轴下方，以开始时间为精确锚点，细线表达真实持续时间；同刻记录仅向下分层，不再左右漂移或使用长连接线
+- **重叠处理**：详细视图以真实时间点显示待办、按最多 3 层放置工作记录；局部拥挤时聚合或显示溢出数量，点击查看具体项目。
 - **快速记录工作**：模态弹窗补录，默认"过去2小时到现在"，快捷时间调整按钮，标签 chip 选择，支持关联待办
 - **新建任务**：模态弹窗，标签 chip 选择，支持子任务步骤、优先级/状态/部门/联系人字段
 - **多级待办树**：父子任务嵌套，紧凑摘要 + 按需展开详情，步骤进度展示，部门/联系人/备注
@@ -33,9 +32,11 @@ Next.js 16（静态导出） + TypeScript 5.8 + 手写 CSS + LocalStorage + GitH
 
 ```bash
 npm install          # 安装依赖
-npm run dev          # localhost:3536/LittleJobHelper
+npm run dev          # localhost:3536/WorkLedger
 npm run build        # 静态导出到 out/
 npm run lint         # ESLint 检查
+npm run check:architecture # 架构边界检查
+npm run typecheck    # 全仓库 TypeScript 检查
 npm test             # 单元测试（Vitest）
 npm run test:e2e     # Playwright E2E（首次需安装 Chromium）
 ```
@@ -52,6 +53,7 @@ npm run test:e2e     # Playwright E2E（首次需安装 Chromium）
 
 ## 文档
 
+- `docs/AI-START-HERE.md` — AI 接手项目的修改入口、模块定位、验证和 WIP 安全规范
 - `AGENTS.md` — AI 开发上下文文档（项目架构、约定、禁止事项、常见改动模式）
 - `docs/ARCHITECTURE.md` — 架构文档
 - `docs/PATTERNS.md` — 常见改动模式

@@ -7,8 +7,8 @@ import { expect, test } from "@playwright/test";
 test("主流程：新建任务 → 搜索 → 编辑 → 删除", async ({ page }) => {
   const title = "E2E 冒烟测试任务";
 
-  // baseURL 含 basePath，绝对路径 goto("/") 会丢弃 /LittleJobHelper，需写完整路径
-  await page.goto("/LittleJobHelper");
+  // baseURL 含 basePath，绝对路径 goto("/") 会丢弃 /WorkLedger，需写完整路径
+  await page.goto("/WorkLedger");
 
   // 新建任务
   await page.getByRole("button", { name: "+ 添加任务" }).click();
