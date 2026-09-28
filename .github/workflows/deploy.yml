@@ -48,6 +48,8 @@ jobs:
 
       - name: Build static site
         run: npm run build
+        env:
+          SITE_BASE_PATH: ${{ github.event.repository.name == 'LittleJobHelper' && '/LittleJobHelper' || '/WorkLedger' }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5

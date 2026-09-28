@@ -41,6 +41,14 @@ npm test             # 单元测试（Vitest）
 npm run test:e2e     # Playwright E2E（首次需安装 Chromium）
 ```
 
+## 部署地址与路径
+
+- 主源码仓库：`exfeitu/WorkLedger`，本地开发路径仍为 `/WorkLedger`。
+- 新 GitHub Pages：`https://exfeitu.github.io/WorkLedger/`。
+- 兼容旧入口：`https://exfeitu.github.io/LittleJobHelper/`。旧仓库保留为发布镜像，将已验证的同一提交快进推送到旧仓库 `master`，由其 Pages workflow 使用旧路径构建；不要删除旧仓库或只改成新路径。
+- Vercel：继续使用现有 `little-job-helper` 项目，站点根路径 `/`。
+- 构建路径由 `SITE_BASE_PATH` 显式指定；未指定时 Vercel 使用根路径，其他环境使用 `/WorkLedger`。保留 `output: 'export'`，Vercel 构建命令为 `npm run build`，输出目录为 `out`。
+
 ## 键盘快捷键
 
 | 快捷键 | 作用 |
