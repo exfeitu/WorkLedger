@@ -16,7 +16,7 @@ const events: EventItem[] = ["a", "b", "c", "d"].map((id, index) => ({
   detail: "详情不会常驻时间块", tags: ["测试"], linkedTodoIds: index === 0 ? ["A"] : [], updatedAt: stamp("08:00"),
 }));
 
-async function loadFixture(page: Page, data = { events, todos }) {
+async function loadFixture(page: Page, data = { events, todos }, legacy = false) {
   await page.goto("/WorkLedger");
   await page.getByRole("button", { name: "📊 导出", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "导出数据", exact: true });
@@ -25,16 +25,16 @@ async function loadFixture(page: Page, data = { events, todos }) {
     buffer: Buffer.from(JSON.stringify({ version: 3, ...data, memos: [], customTags: [] })) });
   await expect(dialog.getByText(/导入成功/)).toBeVisible();
   await dialog.getByRole("button", { name: "关闭", exact: true }).click();
-  await page.getByLabel("跳转日期", { exact: true }).fill(date);
+  await expect(page.locator(".legacy-timeline")).toBeVisible();
+  if (!legacy) await page.getByRole("button", { name: "切换到新版时间轴", exact: true }).click();
+  await page.getByLabel(legacy ? "旧版跳转日期" : "跳转日期", { exact: true }).fill(date);
 }
 
 test.use({ viewport: { width: 1600, height: 1000 } });
 
-test("旧版完整时间轴可切换、缩放、跳转并编辑同一份数据", async ({ page }, info) => {
+test("默认经典时间轴可切换、缩放、跳转并编辑同一份数据", async ({ page }, info) => {
   await page.clock.setFixedTime(new Date(`${date}T14:00:00`));
-  await loadFixture(page, { todos: [todos[0]], events: [events[0]] });
-  await expect(page.locator(".at-root")).toBeVisible();
-  await page.getByRole("button", { name: "切换到旧版时间轴", exact: true }).click();
+  await loadFixture(page, { todos: [todos[0]], events: [events[0]] }, true);
   const legacy = page.locator(".legacy-timeline");
   await expect(legacy).toBeVisible();
   await expect(page.locator(".at-root")).toHaveCount(0);
@@ -53,6 +53,10 @@ test("旧版完整时间轴可切换、缩放、跳转并编辑同一份数据",
   await expect(page.locator(".legacy-timeline")).toHaveCount(0);
   await expect(page.locator(".at-heading")).toContainText("12 小时");
   await expect(page.locator('.at-root [data-event-id="a"]')).toHaveCount(1);
+  await page.reload();
+  await expect(legacy.locator(".line-timeline-shell")).toBeVisible();
+  await expect(page.locator(".at-root")).toHaveCount(0);
+  await page.getByRole("button", { name: "切换到新版时间轴", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "切换到旧版时间轴", exact: true }).click();
   await expect(legacy.locator(".line-timeline-shell")).toBeVisible();
@@ -61,8 +65,7 @@ test("旧版完整时间轴可切换、缩放、跳转并编辑同一份数据",
 
 test("经典旧版密集任务及记录始终逐项显示卡片，缩小不聚合", async ({ page }, info) => {
   await page.clock.setFixedTime(new Date(`${date}T14:00:00`));
-  await loadFixture(page, { todos: ["甲", "乙", "丙", "丁"].map(id => task(id, "09:00")), events });
-  await page.getByRole("button", { name: "切换到旧版时间轴", exact: true }).click();
+  await loadFixture(page, { todos: ["甲", "乙", "丙", "丁"].map(id => task(id, "09:00")), events }, true);
   const legacy = page.locator(".legacy-timeline");
   await legacy.getByLabel("旧版跳转日期").fill(date);
   await expect(legacy.locator(".line-event-card")).toHaveCount(8);

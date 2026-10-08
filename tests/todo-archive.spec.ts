@@ -25,7 +25,8 @@ test("待办归档：完成后移入归档并可恢复", async ({ page }) => {
   await page.getByRole("button", { name: "标记完成" }).click();
 
   // 从待办列表消失，计数归零
-  await expect(page.getByText(title).first()).not.toBeVisible();
+  // 经典时间轴仍保留已完成任务卡片；这里只检查未完成待办列表。
+  await expect(page.getByRole("button", { name: `编辑任务：${title}`, exact: true })).toHaveCount(0);
   await expect(page.getByText("未完成 0 项")).toBeVisible();
   await expect(page.getByText("没有未完成的待办")).toBeVisible();
 
