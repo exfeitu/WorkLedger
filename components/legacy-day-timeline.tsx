@@ -5,6 +5,8 @@ import { EventItem, TodoItem } from "@/types";
 import {
   BASE_VISIBLE_DAYS,
   CARD_HORIZONTAL_GAP,
+  CARD_HEIGHT,
+  AXIS_CARD_GAP,
   FULL_CARD_MAX_WIDTH,
   FULL_CARD_MIN_WIDTH,
   LANE_HEIGHT,
@@ -294,10 +296,9 @@ export function LegacyDayTimeline({ events, todos = [], linkedTodoTitles = {}, o
   const trackHeight = useMemo(() => {
     const maxTop = stableItems.reduce((m, e) => (e.side === "top" ? Math.max(m, e.stack) : m), -1);
     const maxBottom = stableItems.reduce((m, e) => (e.side === "bottom" ? Math.max(m, e.stack) : m), -1);
-    // 卡片需要足够纵向空间：stack 层高 + 卡片高度(~150px) + 边距
-    const cardClearance = 160;
-    const needed = (Math.max(maxTop, maxBottom) + 1) * LANE_HEIGHT * 2 + cardClearance * 2 + TRACK_PADDING * 2;
-    return Math.max(480, needed);
+    const layers = Math.max(0, maxTop, maxBottom);
+    const needed = (layers * LANE_HEIGHT + AXIS_CARD_GAP + 8 + CARD_HEIGHT + TRACK_PADDING) * 2;
+    return Math.max(344, needed);
   }, [stableItems]);
 
   // 按周聚合计数（以周一为周起始对齐）
@@ -530,7 +531,8 @@ export function LegacyDayTimeline({ events, todos = [], linkedTodoTitles = {}, o
                 "--stack-offset": `${item.stack * LANE_HEIGHT}px`,
                 "--card-offset-x": `${item.cardOffsetXPx}px`,
                 "--card-width": `${item.cardWidthPx}px`,
-                "--lane-height": `${LANE_HEIGHT}px`,
+                "--axis-card-gap": `${AXIS_CARD_GAP}px`,
+                "--card-height": `${CARD_HEIGHT}px`,
               } as CSSProperties;
 
               const handleClick = () => {

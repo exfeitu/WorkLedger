@@ -37,6 +37,7 @@ test("默认经典时间轴可切换、缩放、跳转并编辑同一份数据",
   await loadFixture(page, { todos: [todos[0]], events: [events[0]] }, true);
   const legacy = page.locator(".legacy-timeline");
   await expect(legacy).toBeVisible();
+  expect(await legacy.locator(".line-timeline-shell").evaluate(n => n.clientHeight)).toBeLessThanOrEqual(360);
   await expect(page.locator(".at-root")).toHaveCount(0);
   await legacy.getByLabel("旧版跳转日期").fill(date);
   await expect(legacy.locator(".line-event-card").filter({ hasText: "工作记录a" })).toBeVisible();
@@ -73,7 +74,10 @@ test("经典旧版密集任务及记录始终逐项显示卡片，缩小不聚�
   for (let i = 0; i < 18; i++) await legacy.getByRole("button", { name: "－", exact: true }).click();
   await expect(legacy.locator(".axis-zoom-value")).toHaveText("10%");
   await expect(legacy.locator(".line-event-card")).toHaveCount(8);
-  for (const width of await legacy.locator(".line-event-card").evaluateAll(nodes => nodes.map(n => n.getBoundingClientRect().width))) expect(width).toBeGreaterThanOrEqual(220);
+  for (const width of await legacy.locator(".line-event-card").evaluateAll(nodes => nodes.map(n => n.getBoundingClientRect().width))) {
+    expect(width).toBeGreaterThanOrEqual(190);
+    expect(width).toBeLessThanOrEqual(260);
+  }
   const boxes = await legacy.locator(".line-event-card").evaluateAll(nodes => nodes.map(n => {
     const r = n.getBoundingClientRect(); return { x: r.x, y: r.y, right: r.right, bottom: r.bottom };
   }));
