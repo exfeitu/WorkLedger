@@ -45,7 +45,9 @@ npm run test:e2e     # Playwright E2E（首次需安装 Chromium）
 
 - 主源码仓库：`exfeitu/WorkLedger`，本地开发路径仍为 `/WorkLedger`。
 - 新 GitHub Pages：`https://exfeitu.github.io/WorkLedger/`。
-- 兼容旧入口：`https://exfeitu.github.io/LittleJobHelper/`。旧仓库保留为发布镜像，将已验证的同一提交快进推送到旧仓库 `master`，由其 Pages workflow 使用旧路径构建；不要删除旧仓库或只改成新路径。
+- 兼容旧入口：`https://exfeitu.github.io/LittleJobHelper/`。旧仓库只发布跳转页，自动跳转到 `/WorkLedger/` 并保留子路径、查询参数和锚点；不要再把应用源码推送到旧仓库覆盖跳转配置。
+- 后续只更新 `WorkLedger/master`：GitHub Pages workflow 与已连接的 Vercel 项目自动部署，旧入口跳转到新 Pages，始终使用其最新版本。
+- 两个 Pages 路径同源，在同一浏览器中共享本地存储。`loadSettings()` 会迁移旧命名的 Token/Gist ID，不需要将密钥放到网址、仓库或部署环境中。Vercel 不同源，需在该站配置同步；不能自动共享 Pages 的本地密钥。
 - Vercel：继续使用现有 `little-job-helper` 项目，站点根路径 `/`。
 - 构建路径由 `SITE_BASE_PATH` 显式指定；未指定时 Vercel 使用根路径，其他环境使用 `/WorkLedger`。保留 `output: 'export'`，Vercel 构建命令为 `npm run build`，输出目录为 `out`。
 

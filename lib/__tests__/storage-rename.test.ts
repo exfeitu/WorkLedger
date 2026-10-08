@@ -45,5 +45,13 @@ describe("Work Ledger storage rename", () => {
     expect(storage.getItem("work-ledger-settings")).toBe(JSON.stringify(settings));
     expect(storage.getItem(LEGACY_STORAGE_KEYS.settings)).toBeNull();
   });
-});
 
+  it("preserves existing new-site credentials when legacy settings also exist", () => {
+    const storage = installStorage();
+    const current = { token: "current-test-token", gistId: "current-gist" };
+    storage.setItem("work-ledger-settings", JSON.stringify(current));
+    storage.setItem(LEGACY_STORAGE_KEYS.settings, JSON.stringify({ token: "old-test-token", gistId: "old-gist" }));
+    expect(loadSettings()).toEqual(current);
+    expect(storage.getItem("work-ledger-settings")).toBe(JSON.stringify(current));
+  });
+});
