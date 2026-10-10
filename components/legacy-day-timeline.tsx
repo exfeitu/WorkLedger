@@ -293,13 +293,15 @@ export function LegacyDayTimeline({ events, todos = [], linkedTodoTitles = {}, o
     });
   }, [positionedItems, shellWidth, visibleRange]);
 
-  const trackHeight = useMemo(() => {
-    const maxTop = stableItems.reduce((m, e) => (e.side === "top" ? Math.max(m, e.stack) : m), -1);
-    const maxBottom = stableItems.reduce((m, e) => (e.side === "bottom" ? Math.max(m, e.stack) : m), -1);
-    const layers = Math.max(0, maxTop, maxBottom);
-    const needed = (layers * LANE_HEIGHT + AXIS_CARD_GAP + 8 + CARD_HEIGHT + TRACK_PADDING) * 2;
-    return Math.max(344, needed);
-  }, [stableItems]);
+  const { trackHeight, axisTop } = useMemo(() => {
+    // 只为当前窗口附近的卡片预留空间，且上下两侧分别计算。
+    const extent = (side: "top" | "bottom") => {
+      const stack = visiblePositionedItems.reduce((max, item) => item.side === side ? Math.max(max, item.stack) : max, -1);
+      return stack < 0 ? 44 : stack * LANE_HEIGHT + AXIS_CARD_GAP + 8 + CARD_HEIGHT + TRACK_PADDING;
+    };
+    const top = extent("top");
+    return { trackHeight: top + extent("bottom"), axisTop: top };
+  }, [visiblePositionedItems]);
 
   // 按周聚合计数（以周一为周起始对齐）
   const weekBrackets = useMemo(() => buildWeekBrackets(allItems), [allItems]);
@@ -472,7 +474,7 @@ export function LegacyDayTimeline({ events, todos = [], linkedTodoTitles = {}, o
         </div>
       )}
       <div className="line-timeline-hscroll" ref={scrollRef} onWheel={handleWheel} onMouseDown={handleMouseDown} style={{ cursor: dragging ? "grabbing" : "grab", opacity: timelineReady ? 1 : 0, transition: "opacity 0.15s ease" }}>
-        <div className="line-timeline-shell" style={{ width: shellWidth, height: trackHeight }}>
+        <div className="line-timeline-shell" style={{ width: shellWidth, height: trackHeight, "--axis-y": `${axisTop}px` } as CSSProperties}>
           <div className="line-timeline-year">{yearLabel}</div>
           <div className="line-timeline-track">
             <div className="line-timeline-axis" />

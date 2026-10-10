@@ -31,6 +31,7 @@ import { buildSearchIndex, findSearchResults } from "@/lib/search-index";
 import { deleteTodos, deleteWorkRecord, restoreTodo, setTodosStatus, upsertTodo, upsertWorkRecord } from "@/lib/ledger-operations";
 
 export default function HomePage() {
+  const [legacyTimeline, setLegacyTimeline] = useState(true);
   const {
     events, todos, memos, setMemos, customTags, isInitialized, cloudEnabled, isOnline,
     syncStatus, syncError, canUndo, addCustomTag, deleteCustomTag,
@@ -216,9 +217,14 @@ export default function HomePage() {
                     >
                       ↩ 撤销
                     </button>
+                    <button type="button" className="timeline-version-toggle" aria-pressed={legacyTimeline}
+                      aria-label={legacyTimeline ? "切换到新版时间轴" : "切换到旧版时间轴"}
+                      onClick={() => setLegacyTimeline(value => !value)}>
+                      {legacyTimeline ? "体验新版 ↗" : "返回经典版 ↗"}
+                    </button>
                   </div>
                 </div>
-                <TimelineSwitcher events={events} todos={todos} onEventClick={setEditingEvent} onTodoClick={setEditingTodo} />
+                <TimelineSwitcher legacy={legacyTimeline} events={events} todos={todos} onEventClick={setEditingEvent} onTodoClick={setEditingTodo} />
               </article>
             </section>
 

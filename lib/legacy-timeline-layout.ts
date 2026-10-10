@@ -11,14 +11,15 @@ export const SCALE_STEP = 0.05;
 export const BASE_VISIBLE_DAYS = 1;
 export const EVENT_COLORS = ["#5fa86e", "#8c6fd1", "#4f9d9d", "#c96f91", "#7ea95b", "#5b8fc9"];
 export const TODO_COLORS = ["#e8964a", "#d97050", "#c98a4f", "#e0a040", "#d97842", "#e8883a"];
-export const FULL_CARD_MIN_WIDTH = 190;
+// 缩放或时间分布拥挤时允许收窄；逐项显示不等于固定宽卡片。
+export const FULL_CARD_MIN_WIDTH = 72;
 export const FULL_CARD_MAX_WIDTH = 260;
 export const CARD_HORIZONTAL_GAP = 6;
 export const CARD_HEIGHT = 120;
-export const AXIS_CARD_GAP = 28;
+export const AXIS_CARD_GAP = 18;
 // 卡片分层间距与轴线留白分开，避免首层也空出一整张卡片的高度。
 export const LANE_HEIGHT = CARD_HEIGHT + 12;
-export const TRACK_PADDING = 16;
+export const TRACK_PADDING = 12;
 export const TODO_MIN_DURATION_MS = 30 * 60 * 1000; // 待办最低 30 分钟宽
 
 export const PRIORITY_LABEL: Record<string, string> = { high: "高", medium: "中", low: "低" };

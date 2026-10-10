@@ -1,10 +1,14 @@
 /* Classic full-card timeline preserved from ced2f8a, before density aggregation. */
 .legacy-timeline {
+background: var(--bg);
+border: 1px solid var(--line);
+border-radius: 10px;
+padding: 8px;
 /* ===== 横向时间轴 ===== */
 .line-timeline {
   position: relative;
   display: grid;
-  gap: 12px;
+  gap: 4px;
 }
 
 .line-timeline-toolbar {
@@ -15,10 +19,10 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 4px 8px;
   border: 1px solid rgba(108, 156, 120, 0.18);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.86);
+  background: var(--panel-strong);
   box-shadow: 0 10px 24px rgba(110, 156, 118, 0.12);
   backdrop-filter: blur(10px);
 }
@@ -27,8 +31,8 @@
   overflow-x: auto;
   overflow-y: clip;
   overscroll-behavior: contain;
-  padding-top: 32px;
-  padding-bottom: 24px;
+  padding-top: 8px;
+  padding-bottom: 8px;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -65,7 +69,7 @@
 /* 水平轴线 */
 .line-timeline-axis {
   position: absolute;
-  top: 50%;
+  top: var(--axis-y);
   left: 0;
   right: 0;
   height: 2px;
@@ -93,8 +97,8 @@
 
 /* 缩放按钮 */
 .axis-zoom-button {
-  width: 48px;
-  height: 48px;
+  width: 34px;
+  height: 34px;
   border: 1px solid rgba(108, 156, 120, 0.18);
   border-radius: 50%;
   color: var(--text);
@@ -230,7 +234,7 @@
 /* 时间刻度（垂直标记） */
 .axis-time-mark {
   position: absolute;
-  top: 50%;
+  top: var(--axis-y);
   display: flex;
   align-items: center;
   transform: translate(-50%, -50%);
@@ -321,7 +325,7 @@
 /* 事件锚点 */
 .line-event {
   position: absolute;
-  top: 50%;
+  top: var(--axis-y);
   height: 0;
   z-index: 4;
 }
@@ -442,8 +446,12 @@
   outline: none;
   z-index: 50;
   transform: translateX(var(--card-offset-x, 0px));
-  width: var(--card-width);
+  width: 260px;
   max-width: 260px;
+  height: auto;
+  min-height: var(--card-height);
+  max-height: 320px;
+  overflow-y: auto;
   box-shadow: 0 16px 36px rgba(110, 156, 118, 0.28);
 }
 
@@ -467,6 +475,13 @@
 .line-event-card:hover .line-event-time,
 .line-event-card:focus-visible .line-event-time {
   visibility: visible;
+}
+
+.line-event-card:hover h4,
+.line-event-card:focus-visible h4,
+.line-event-card:hover p,
+.line-event-card:focus-visible p {
+  -webkit-line-clamp: unset;
 }
 
 .line-event-card h4 {

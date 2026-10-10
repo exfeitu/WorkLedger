@@ -37,7 +37,15 @@ test("默认经典时间轴可切换、缩放、跳转并编辑同一份数据",
   await loadFixture(page, { todos: [todos[0]], events: [events[0]] }, true);
   const legacy = page.locator(".legacy-timeline");
   await expect(legacy).toBeVisible();
-  expect(await legacy.locator(".line-timeline-shell").evaluate(n => n.clientHeight)).toBeLessThanOrEqual(360);
+  const toggle = page.getByRole("button", { name: "切换到新版时间轴", exact: true });
+  const undo = page.getByRole("button", { name: "↩ 撤销", exact: true });
+  const toggleBox = (await toggle.boundingBox())!;
+  const undoBox = (await undo.boundingBox())!;
+  expect(Math.abs(toggleBox.y + toggleBox.height / 2 - undoBox.y - undoBox.height / 2)).toBeLessThan(2);
+  await expect(page.locator(".timeline-version-toolbar")).toHaveCount(0);
+  expect(await legacy.locator(".line-timeline-shell").evaluate(n => n.clientHeight)).toBeLessThanOrEqual(316);
+  expect(await legacy.evaluate(n => getComputedStyle(n).backgroundColor)).toBe("rgb(239, 248, 240)");
+  expect(await legacy.evaluate(n => n.getBoundingClientRect().height)).toBeLessThan(400);
   await expect(page.locator(".at-root")).toHaveCount(0);
   await legacy.getByLabel("旧版跳转日期").fill(date);
   await expect(legacy.locator(".line-event-card").filter({ hasText: "工作记录a" })).toBeVisible();
@@ -46,6 +54,7 @@ test("默认经典时间轴可切换、缩放、跳转并编辑同一份数据",
   await legacy.getByRole("button", { name: "＋", exact: true }).click();
   await expect(legacy.locator(".axis-zoom-value")).toHaveText("105%");
   await legacy.screenshot({ path: info.outputPath("legacy-timeline.png") });
+  await page.locator(".panel").filter({ has: legacy }).screenshot({ path: info.outputPath("classic-toolbar.png") });
   await legacy.locator(".line-event-card").filter({ hasText: "工作记录a" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
@@ -71,13 +80,16 @@ test("经典旧版密集任务及记录始终逐项显示卡片，缩小不聚�
   await legacy.getByLabel("旧版跳转日期").fill(date);
   await expect(legacy.locator(".line-event-card")).toHaveCount(8);
   await expect(legacy.locator(".line-todo-card")).toHaveCount(4);
+  const beforeWidths = await legacy.locator(".line-event-card").evaluateAll(nodes => nodes.map(n => n.getBoundingClientRect().width));
   for (let i = 0; i < 18; i++) await legacy.getByRole("button", { name: "－", exact: true }).click();
   await expect(legacy.locator(".axis-zoom-value")).toHaveText("10%");
   await expect(legacy.locator(".line-event-card")).toHaveCount(8);
   for (const width of await legacy.locator(".line-event-card").evaluateAll(nodes => nodes.map(n => n.getBoundingClientRect().width))) {
-    expect(width).toBeGreaterThanOrEqual(190);
+    expect(width).toBeGreaterThanOrEqual(72);
     expect(width).toBeLessThanOrEqual(260);
   }
+  const afterWidths = await legacy.locator(".line-event-card").evaluateAll(nodes => nodes.map(n => n.getBoundingClientRect().width));
+  expect(afterWidths.some((width, index) => width < beforeWidths[index])).toBe(true);
   const boxes = await legacy.locator(".line-event-card").evaluateAll(nodes => nodes.map(n => {
     const r = n.getBoundingClientRect(); return { x: r.x, y: r.y, right: r.right, bottom: r.bottom };
   }));
@@ -87,6 +99,22 @@ test("经典旧版密集任务及记录始终逐项显示卡片，缩小不聚�
   }
   await expect(legacy.locator(".line-event-card p").first()).toContainText("详情不会常驻时间块");
   await legacy.screenshot({ path: info.outputPath("classic-full-cards.png") });
+  const compactCard = legacy.locator(".line-event-card").first();
+  await compactCard.hover();
+  await expect.poll(() => compactCard.evaluate(n => n.getBoundingClientRect().width)).toBe(260);
+  await page.mouse.move(0, 0);
+  await expect.poll(() => compactCard.evaluate(n => n.getBoundingClientRect().width)).toBe(72);
+});
+
+test("经典版空日紧凑，远处密集历史记录不撑高当前窗口", async ({ page }) => {
+  await page.clock.setFixedTime(new Date(`${date}T14:00:00`));
+  const historicalEvents = Array.from({ length: 12 }, (_, index) => ({
+    ...events[0], id: `historical-${index}`, startTime: "2026-08-01T09:00:00", endTime: "2026-08-01T10:00:00",
+  }));
+  await loadFixture(page, { todos: [], events: historicalEvents }, true);
+  const shell = page.locator(".legacy-timeline .line-timeline-shell");
+  await expect.poll(() => shell.evaluate(n => n.clientHeight)).toBe(88);
+  await expect(page.locator(".legacy-timeline .line-event-card")).toHaveCount(0);
 });
 
 test("打开时按早班晚班自动定位，空日使用默认工作时段", async ({ page }) => {

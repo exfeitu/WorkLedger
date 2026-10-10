@@ -57,10 +57,10 @@
 
 
 .app-shell:has(.timeline-switcher) { width: min(1480px, calc(100% - 28px)); }
-.panel:has(> .timeline-switcher) { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(79,143,99,.04); }
+.panel:has(> .timeline-switcher) { background: var(--panel-strong); border-radius: 10px; box-shadow: 0 2px 8px rgba(79,143,99,.04); }
+.panel:has(> .timeline-switcher .at-root) { background: #fff; }
 .panel:has(> .timeline-switcher)::after { display: none; }
 .timeline-switcher { min-width: 0; }
-.timeline-version-toolbar { display: flex; justify-content: flex-end; margin-bottom: 6px; }
 .timeline-version-toggle { border: 0; background: transparent; color: var(--muted); padding: 4px 6px; font: 11px/1.5 system-ui, sans-serif; cursor: pointer; border-radius: 4px; }
 .timeline-version-toggle:hover { color: var(--accent); background: var(--bg); }
 .timeline-version-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
