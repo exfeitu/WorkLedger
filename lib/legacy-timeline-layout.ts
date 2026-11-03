@@ -133,9 +133,10 @@ export function todoToTimeline(todo: TodoItem): TimelineItem {
   const endMs = startMs + TODO_MIN_DURATION_MS;
   const endDate = new Date(endMs);
   const pad2 = (n: number) => String(n).padStart(2, "0");
-  const d = (s: string) => s.slice(0, 10);
   const anchorStr = anchor.slice(0, 19);
-  const endStr = `${d(anchor)}T${pad2(endDate.getHours())}:${pad2(endDate.getMinutes())}:00`;
+  // 结束时间必须带完整日期：23:45 的待办会跨到次日，只拼时钟会得到早于开始的结束时间，
+  // 宽度算出负数后被 Math.max 兜成 1 分钟。
+  const endStr = `${endDate.getFullYear()}-${pad2(endDate.getMonth() + 1)}-${pad2(endDate.getDate())}T${pad2(endDate.getHours())}:${pad2(endDate.getMinutes())}:00`;
 
   return {
     kind: "todo",
@@ -147,6 +148,20 @@ export function todoToTimeline(todo: TodoItem): TimelineItem {
     tags: todo.tags,
     todoData: todo,
   };
+}
+
+/**
+ * 构造时间轴条目：合并工作记录与待办，按开始时间升序。
+ * 取消项与已完成项都不绘制 —— 前者没有发生，后者已经收口到首页归档区，
+ * 留在轴上会与进行中的计划混淆（两版时间轴统一遵守）。
+ */
+export function buildTimelineItems(events: EventItem[], todos: TodoItem[]): TimelineItem[] {
+  return [
+    ...events.map(eventToTimeline),
+    ...todos
+      .filter((todo) => todo.status !== "cancelled" && todo.status !== "completed")
+      .map(todoToTimeline),
+  ].sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 }
 
 /**

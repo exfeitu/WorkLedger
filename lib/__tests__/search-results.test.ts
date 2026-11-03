@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterAndSortResults } from "../search-results";
+import { collectFilterTags, filterAndSortResults } from "../search-results";
 import { SearchResult } from "@/types";
 
 const results: SearchResult[] = [
@@ -22,5 +22,20 @@ describe("搜索筛选和排序", () => {
   });
   it("标题中的数字按自然顺序排序", () => {
     expect(filterAndSortResults(results, "all", "", "title").map((item) => item.id)).toEqual(["c", "b", "d", "a"]);
+  });
+});
+
+describe("标签筛选选项", () => {
+  it("合并预设标签与数据中出现的标签并去重排序", () => {
+    const sources = [{ tags: ["人事", "会议"] }, { tags: ["人事"] }, { tags: [] }];
+    expect(collectFilterTags(sources, ["党建", "人事"])).toEqual(["党建", "会议", "人事"]);
+  });
+
+  it("无数据时仍返回预设标签，保证下拉不会为空", () => {
+    expect(collectFilterTags([], ["党建", "人事"])).toEqual(["党建", "人事"]);
+  });
+
+  it("忽略空标签", () => {
+    expect(collectFilterTags([{ tags: ["", "会议"] }], [])).toEqual(["会议"]);
   });
 });

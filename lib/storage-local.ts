@@ -7,6 +7,7 @@ const STORAGE_KEY_TODOS = "work-ledger-todos";
 const STORAGE_KEY_VERSION = "work-ledger-version";
 const STORAGE_KEY_CUSTOM_TAGS = "work-ledger-custom-tags";
 const STORAGE_KEY_MEMOS = "work-ledger-memos";
+const STORAGE_KEY_TIMELINE_MODE = "work-ledger-timeline-mode";
 
 let legacyStorageChecked = false;
 
@@ -237,6 +238,33 @@ export function setCustomTags(tags: string[]): string[] {
   return unique;
 }
 
+/**
+ * 时间轴版本：classic（经典版，默认）或 adaptive（新版自适应）。
+ * 只是界面偏好，不进入 Gist 同步，也不需要版本迁移。
+ */
+export type TimelineMode = "classic" | "adaptive";
+
+export function loadTimelineMode(): TimelineMode {
+  if (typeof window === "undefined") return "classic";
+  ensureStorageNamespace();
+
+  try {
+    return localStorage.getItem(STORAGE_KEY_TIMELINE_MODE) === "adaptive" ? "adaptive" : "classic";
+  } catch {
+    return "classic";
+  }
+}
+
+export function saveTimelineMode(mode: TimelineMode): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.setItem(STORAGE_KEY_TIMELINE_MODE, mode);
+  } catch (error) {
+    console.error("Failed to save timeline mode:", error);
+  }
+}
+
 export function clearAllStorage(): void {
   if (typeof window === "undefined") return;
 
@@ -245,6 +273,7 @@ export function clearAllStorage(): void {
   localStorage.removeItem(STORAGE_KEY_VERSION);
   localStorage.removeItem(STORAGE_KEY_CUSTOM_TAGS);
   localStorage.removeItem(STORAGE_KEY_MEMOS);
+  localStorage.removeItem(STORAGE_KEY_TIMELINE_MODE);
   [
     LEGACY_STORAGE_KEYS.events,
     LEGACY_STORAGE_KEYS.todos,

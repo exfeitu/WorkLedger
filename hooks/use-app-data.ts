@@ -162,6 +162,12 @@ export function useAppData(): AppData {
       if (result.customTags.length > customTags.length) {
         setTagsState(result.customTags);
       }
+      if (result.mergedFromRemote) {
+        // 远端合并出的更新直接回写本地状态，否则云端已最新、界面要刷新才同步。
+        // 用无历史 setter：云端合并不是用户操作，不该进 Ctrl+Z 撤销栈。
+        setData(syncLinkedItems(result.events, result.todos));
+        setMemosState(result.memos);
+      }
     }, 3000);
 
     return () => clearTimeout(timer);

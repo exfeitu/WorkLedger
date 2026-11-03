@@ -94,7 +94,9 @@ export type DetailedTodoMarker =
   | { kind: "cluster"; id: string; anchorMs: number; lane: number; todos: TodoItem[] };
 /** proximityMinutes 由画布宽度与标签占位宽度换算，碰撞只影响层级，不移动时间锚点。 */
 export function buildDetailedTodoMarkers(todos: TodoItem[], proximityMinutes = 40, clusterAt = 4, rangeEndMs = Infinity): DetailedTodoMarker[] {
-  const ordered = todos.filter(t => t.status !== "cancelled")
+  // 只绘制还在跟进中的待办：已完成项已进归档区，取消项从未发生。
+  // 概览统计（buildDaySummaries）仍计入已完成，避免"本周工作量"被低估。
+  const ordered = todos.filter(t => t.status !== "cancelled" && t.status !== "completed")
     .map(todo => ({ todo, anchorMs: todoAnchorMs(todo) }))
     .filter((entry): entry is { todo: TodoItem; anchorMs: number } => entry.anchorMs !== null)
     .sort((a, b) => a.anchorMs - b.anchorMs || a.todo.id.localeCompare(b.todo.id));

@@ -27,11 +27,22 @@ import {
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { EventItem, TodoItem } from "@/types";
 import { useAppData } from "@/hooks/use-app-data";
+import { loadTimelineMode, saveTimelineMode } from "@/lib/storage";
 import { buildSearchIndex, findSearchResults } from "@/lib/search-index";
+import { collectFilterTags } from "@/lib/search-results";
+import { BASE_TAGS } from "@/lib/constants";
 import { deleteTodos, deleteWorkRecord, restoreTodo, setTodosStatus, upsertTodo, upsertWorkRecord } from "@/lib/ledger-operations";
 
 export default function HomePage() {
-  const [legacyTimeline, setLegacyTimeline] = useState(true);
+  // 时间轴版本偏好：默认经典版，切换后写入本地，刷新不再回退
+  const [legacyTimeline, setLegacyTimeline] = useState(() => loadTimelineMode() === "classic");
+  const toggleTimelineMode = useCallback(() => {
+    setLegacyTimeline((current) => {
+      const next = !current;
+      saveTimelineMode(next ? "classic" : "adaptive");
+      return next;
+    });
+  }, []);
   const {
     events, todos, memos, setMemos, customTags, isInitialized, cloudEnabled, isOnline,
     syncStatus, syncError, canUndo, addCustomTag, deleteCustomTag,
@@ -87,6 +98,11 @@ export default function HomePage() {
 
   const allSearchItems = useMemo(() => buildSearchIndex(events, todos, memos), [events, todos, memos]);
   const searchResults = useMemo(() => findSearchResults(allSearchItems, searchQuery), [allSearchItems, searchQuery]);
+  // 标签筛选的选项独立于搜索结果，否则关键词为空时下拉没有任何标签可选。
+  const availableTags = useMemo(
+    () => collectFilterTags([...events, ...todos, ...memos], [...BASE_TAGS, ...customTags]),
+    [events, todos, memos, customTags],
+  );
 
   const handleSaveTask = (todo: TodoItem) => {
     setData(upsertTodo({ events, todos }, todo));
@@ -219,7 +235,7 @@ export default function HomePage() {
                     </button>
                     <button type="button" className="timeline-version-toggle" aria-pressed={legacyTimeline}
                       aria-label={legacyTimeline ? "切换到新版时间轴" : "切换到旧版时间轴"}
-                      onClick={() => setLegacyTimeline(value => !value)}>
+                      onClick={toggleTimelineMode}>
                       {legacyTimeline ? "体验新版 ↗" : "返回经典版 ↗"}
                     </button>
                   </div>
@@ -416,14 +432,10 @@ export default function HomePage() {
                     ]} />
                   </div>
                 </div>
-                <SearchPanel results={searchResults} query={searchQuery} onQueryChange={setSearchQuery} inputRef={searchInputRef} />
+                <SearchPanel results={searchResults} query={searchQuery} onQueryChange={setSearchQuery} availableTags={availableTags} inputRef={searchInputRef} />
               </article>
             </section>
           </section>
-
-          <aside className="right-rail panel">
-            {/* 右侧边栏预留 */}
-          </aside>
         </div>
       </section>
 

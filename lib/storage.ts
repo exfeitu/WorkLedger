@@ -31,10 +31,13 @@ export {
   addCustomTag,
   removeCustomTag,
   setCustomTags,
+  loadTimelineMode,
+  saveTimelineMode,
   clearAllStorage,
   exportDataAsFile,
   importDataFromFile,
 } from "@/lib/storage-local";
+export type { TimelineMode } from "@/lib/storage-local";
 
 // Gist 云同步
 export {

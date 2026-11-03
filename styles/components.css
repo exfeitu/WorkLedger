@@ -639,10 +639,6 @@
     grid-template-columns: 1fr;
   }
 
-  .right-rail {
-    order: -1;
-  }
-
 }
 
 @media (max-width: 860px) {

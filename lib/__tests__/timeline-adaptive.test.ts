@@ -87,9 +87,14 @@ describe("真实时间待办节点", () => {
     expect(buildDetailedTodoMarkers([todo("a"), todo("b", "12:00")]).map(m => m.lane)).toEqual([0, 0]);
     expect(buildDetailedTodoMarkers([todo("a"), todo("b", "09:10")], 90, 2)[0].kind).toBe("cluster");
   });
-  it("未设时间和取消项不虚构位置；完成项保留", () => {
-    const source = [{ ...todo("a"), startTime: undefined }, { ...todo("b"), status: "cancelled" as const }, { ...todo("c"), status: "completed" as const }];
-    expect(buildDetailedTodoMarkers(source).map(m => m.id)).toEqual(["c"]);
+  it("未设时间、取消项与完成项都不绘制", () => {
+    const source = [
+      { ...todo("a"), startTime: undefined },
+      { ...todo("b"), status: "cancelled" as const },
+      { ...todo("c"), status: "completed" as const },
+      todo("d"),
+    ];
+    expect(buildDetailedTodoMarkers(source).map(m => m.id)).toEqual(["d"]);
   });
 });
 describe("记录分层及真实持续时间", () => {

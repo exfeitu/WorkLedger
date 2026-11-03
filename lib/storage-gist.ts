@@ -395,17 +395,28 @@ export async function initCloudSync(token: string): Promise<GistSettings> {
 
 /**
  * 推送数据到云端（先拉取合并，再推送，防止覆盖他人更新）
+ *
+ * 返回值带上合并后的完整数据：调用方可据此把远端更新回写到本地状态，
+ * 否则云端已是最新、界面却要等刷新才看到。
  */
+export type PushResult = {
+  mergedFromRemote: boolean;
+  customTags: string[];
+  events: EventItem[];
+  todos: TodoItem[];
+  memos: MemoItem[];
+};
+
 export async function pushToCloud(
   events: EventItem[],
   todos: TodoItem[],
   customTags?: string[],
   memos?: MemoItem[],
-): Promise<{ mergedFromRemote: boolean; customTags: string[] }> {
+): Promise<PushResult> {
   const tags = customTags ?? loadCustomTags();
   const localMemos = memos ?? loadMemosFromStorage() ?? [];
   const settings = loadSettings();
-  if (!settings) return { mergedFromRemote: false, customTags: tags };
+  if (!settings) return { mergedFromRemote: false, customTags: tags, events, todos, memos: localMemos };
 
   setSyncStatus("syncing");
 
@@ -438,13 +449,19 @@ export async function pushToCloud(
     // 3. 推送合并后的数据
     await updateGist(settings.token, settings.gistId, finalEvents, finalTodos, finalTags, finalMemos);
     setSyncStatus("success");
-    return { mergedFromRemote, customTags: finalTags };
+    return {
+      mergedFromRemote,
+      customTags: finalTags,
+      events: finalEvents,
+      todos: finalTodos,
+      memos: finalMemos,
+    };
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "云端同步失败";
     setSyncStatus("error", message);
     console.error("Cloud sync failed:", error);
-    return { mergedFromRemote: false, customTags: tags };
+    return { mergedFromRemote: false, customTags: tags, events, todos, memos: localMemos };
   }
 }
 

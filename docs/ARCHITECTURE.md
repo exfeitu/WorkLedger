@@ -22,9 +22,18 @@ styles/                     # CSS 按功能模块拆分（顺序即级联顺序�
   archive.css               # 待办归档
 components/
   app-header.tsx            # 三页共用顶部导航栏（含同步状态指示）
+  timeline-switcher.tsx     # 经典版 / 自适应版切换（旧版走 next/dynamic 懒加载）
+  legacy-day-timeline.tsx   # 经典版时间轴：连续缩放、拖拽平移、卡片分层
   day-timeline.tsx          # 自适应时间轴工具栏、导航、滚轮、拖拽及详情选择
+  adaptive-day-view.tsx     # 1 天与 3 天共用的真实时间画布
+  adaptive-three-day-view.tsx
+  adaptive-week-view.tsx    # 7 天：每日优先级数量与工时
+  adaptive-month-view.tsx   # 30 天：六级密度，点击回到当天
+  timeline-detail-panel.tsx # 自适应版侧栏详情
+  timeline-popover.tsx      # 聚簇/溢出弹层
+  timeline-summary-now.tsx  # 概览视图的“现在”标记
   diary-timeline.tsx        # 文字日记时间轴
-  search-panel.tsx          # 搜索结果（命中高亮）
+  search-panel.tsx          # 搜索结果（命中高亮、类型/标签筛选）
   todo-tree.tsx             # 递归待办树（紧凑摘要、详情展开、批量选择）
   archived-todos-panel.tsx  # 已完成/已取消待办归档与恢复
   memo-list.tsx             # 备忘录列表
@@ -36,28 +45,31 @@ components/
   task-form-panel.tsx       # 任务编辑弹窗（含子步骤编辑）
   settings-panel.tsx        # 云同步设置
   export-panel.tsx          # 导出 JSON/CSV + 导入 JSON
-  backup-reminder.tsx       # 周一/周五首开"记得备份"气泡
+  backup-reminder.tsx       # 周一/周五首开“记得备份”气泡
   stats-dashboard.tsx       # 数据统计概览
   help-icon.tsx             # 可复用 ⓘ 帮助图标
   error-boundary.tsx        # 顶层错误边界
 hooks/
   use-app-data.ts           # 共享 hook：数据加载、持久化、云同步、撤销
+  use-continuous-day-scroll.ts # 自适应时间轴的连续日滚动与拖拽
   use-keyboard-shortcuts.ts # 全局键盘快捷键
   use-focus-trap.ts         # 模态弹窗焦点锁定
   use-backup-reminder.ts    # 备份提醒（周一周五首开去重）
 lib/
   storage.ts                # 存储层统一出口（re-export）
   storage-migrate.ts        # 数据版本迁移系统
-  storage-local.ts          # LocalStorage、自定义标签、JSON 导入导出
+  storage-local.ts          # LocalStorage、自定义标签、时间轴版本偏好、JSON 导入导出
   storage-gist.ts           # Gist 云同步、同步状态
+  storage-legacy.ts         # 旧 LocalStorage 键名映射
   utils.ts                  # 纯函数：syncLinkedItems、树构建、格式化、拼音、genId
-  timeline-adaptive.ts      # 时间轴纯函数（模式、待办碰撞、记录 lane/overflow、统计、密度）
+  timeline-adaptive.ts      # 自适应时间轴纯函数（模式、待办碰撞、记录 lane/overflow、统计、密度）
+  legacy-timeline-layout.ts # 经典版时间轴纯函数（条目构造、lane、卡片宽度、周聚合）
   ledger-operations.ts      # Event/Todo 的纯业务变更，统一返回双向关联快照
   search-index.ts           # Todo/Event/Memo 搜索索引构建与全文/拼音匹配
-  search-results.ts         # 搜索结果类型/标签过滤和排序
+  search-results.ts         # 搜索结果类型/标签过滤、排序，以及标签选项聚合
   memo.ts                   # 备忘录纯函数（正文转文本、搜索、排序、进度）
   constants.ts              # 共享常量（BASE_TAGS）
-  sample-data.ts            # 示例数据（当前未使用，保留作参考）
+  sample-data.ts            # 示例数据（当前仅用其中的部门选项，其余保留作参考）
 ```
 
 ## 核心类型 (`types.ts`)
@@ -113,9 +125,15 @@ Memo 操作 → setMemos()（独立撤销历史）──────────
   useEffect（isInitialized 守卫） → 保存 events / todos / memos / customTags 到 LocalStorage
                                                      │
   useEffect（3s 防抖，离线跳过） → pushToCloud(events, todos, customTags, memos)
+                                                     │
+                                    合并出的远端更新（mergedFromRemote）
+                                                     ↓
+                        setData / setMemosState（无历史 setter，不污染撤销栈）
 ```
 
 **isInitialized 守卫**：防止首次渲染时覆盖 LocalStorage。`isInitialized` 在 `useEffect` 中设为 `true`，确保 hydration 完成前不写存储。
+
+**云端合并回写**：`pushToCloud()` 返回合并后的 `events/todos/memos/customTags`。若本次有远端更新被采纳，hook 直接把结果写回状态与 LocalStorage，否则云端已是最新、界面要等刷新才同步。回写使用无历史的 setter —— 云端合并不是用户操作，`Ctrl+Z` 不应撤销它。
 
 **撤销**：`use-app-data.ts` 为 Event/Todo 和 Memo 维护两套独立历史栈，分别通过 `setData`/`undo` 与 `setMemos`/`undoMemos` 操作；每套上限 20 步。
 
@@ -124,7 +142,7 @@ Memo 操作 → setMemos()（独立撤销历史）──────────
 | 模块 | 职责 |
 |------|------|
 | `storage-migrate.ts` | `CURRENT_DATA_VERSION`、`migrateData`、`parseVersion`、`migrations[]`（纯函数） |
-| `storage-local.ts` | Event/Todo/Memo LocalStorage 读写、版本号、自定义标签、JSON 导入导出（含结构校验） |
+| `storage-local.ts` | Event/Todo/Memo LocalStorage 读写、版本号、自定义标签、时间轴版本偏好、JSON 导入导出（含结构校验） |
 | `storage-gist.ts` | Gist API、Event/Todo/Memo ID 级合并、`initCloudSync`/`pushToCloud`/`pullAndMerge`、同步状态订阅 |
 | `storage.ts` | 统一 re-export，既有调用方无感 |
 
@@ -162,18 +180,34 @@ Memo 操作 → setMemos()（独立撤销历史）──────────
 - 保存时合并预设 + 自定义为 `tags: string[]`，无标签默认 `["其他"]`
 - 自定义标签存 LocalStorage + 云端同步
 
-## 时间轴缩放与原生时间表达
+## 时间轴（双版本并存）
 
-- **模式**：固定 1/3/7/30 天；滚轮按 1.75/4.5/10 天阈值切换表现，不无限压缩同一种 UI。
-- **真实坐标**：日期按本地零点划分；待办取安排时间、否则截止时间。未安排任务单独列出，取消项不绘制，完成项保留勾选点。
-- **待办碰撞**：按画布宽度换算标签占位，优先复用最多 3 层；局部同时碰撞达到 4 项才聚合。聚合窗口固定于首个节点，不随成员延伸成链。三天模式隐藏标题，局部邻近节点聚合。午夜标签向内收，时间锚点不移动。
-- **待办语义**：不按过去/未来分区或着色；圆点颜色表示优先级，外圈表示进行中，勾选表示完成。逾期只按截止时间判断，并保留原安排/截止锚点；仅安排在过去不等于逾期。未选中时不预占详情栏，详细视图高度跟随实际层数。
-- **工作块**：实际开始/结束决定位置与宽度，跨日裁切；最多 3 个 lane，额外记录通过当天 `+N记录` 列表访问，不改变时长或横移。
-- **概览**：7 天展示每日高/中/低数量、记录数及工时；30 天按待办数/总工时绘制 0–5 级相对密度，悬停查看统计，点击回到当天。工时为记录时长相加，跨日分摊，不对重叠时间去重。
-- **详情**：单项点击选中 ID，侧栏从最新数据派生内容；只有编辑按钮调用已有表单。概览视图不预留空侧栏。
-- **交互**：日期跳转、前后时间段、今天、红色当前时间线；拖拽平移，拖过画布边界可切换日期。窄屏允许内部横向滚动，详情置于下方。
-- **结构**：`lib/timeline-adaptive.ts` 负责纯计算；`AdaptiveDayView` 被 1/3 天共用，周/月单独渲染统计。旧二维装箱及浮动卡片路径已移除。
-- **验证**：Vitest 覆盖聚合、lane、跨日统计和密度；Playwright 覆盖详情编辑、四档切换、月视图跳转、拖拽及窄屏。系统保留 3536 时可仅为测试设置 `E2E_PORT`，不改变 `npm run dev` 端口。
+两套实现同时维护，由 `components/timeline-switcher.tsx` 按偏好只挂载一套；旧版通过 `next/dynamic` 懒加载。偏好写 LocalStorage（`loadTimelineMode` / `saveTimelineMode`），默认**经典版**。
+
+| 版本 | 入口 | 纯计算 | 样式 |
+|---|---|---|---|
+| 经典版（默认） | `legacy-day-timeline.tsx` | `legacy-timeline-layout.ts` | `styles/legacy-timeline.css` |
+| 自适应版 | `day-timeline.tsx` + `adaptive-*-view.tsx` | `timeline-adaptive.ts` | `styles/timeline.css` |
+
+**两版共用规则**
+- 条目统一由 `buildTimelineItems()` 构造：工作记录全绘制；待办**只绘制 `pending` / `in_progress`**。`completed` 与 `cancelled` 都不进入时间轴 —— 已完成项已收口到首页归档区，留在轴上会和进行中的计划混淆。
+- 概览统计（7 天优先级数量、30 天密度）**仍计入已完成**。即「渲染不绘制、统计仍计入」，避免“本周工作量”被低估。
+- 待办锚点取 `startTime`，否则 `dueDate`；逾期只按截止时间判断。待办跨度固定 30 分钟，跨零点时结束时间落到次日（`todoToTimeline`）。
+- 未选中时不预占详情栏，详细视图高度跟随实际层数。
+
+**经典版**
+- 连续缩放 3%–2400%（`MIN_SCALE` / `MAX_SCALE`）：滚轮锚定光标位置，按钮锚定视窗中心。
+- 卡片宽度 `clamp(时长占比, 72px, 260px)`；同侧避让只推 `--card-offset-x`，锚点圆点与连接线不动，保证时间对应关系可读。
+- 画布按 today ±730 天铺开，视口虚拟化只渲染可见范围；待办以菱形锚点、记录以真实起止成块。
+- 工具栏缩放按钮为「－ 百分比 ＋」，与常见软件方向一致。
+
+**自适应版**
+- 固定 1/3/7/30 天；滚轮按 1.75/4.5/10 天阈值切换表现，不无限压缩同一种 UI。
+- 待办碰撞按画布宽度换算标签占位，复用最多 3 层；局部同时达 4 项才聚合，聚合窗口固定于首个节点，不随成员延伸成链。
+- 工作块最多 3 lane，额外记录通过 `+N记录` 访问，不改变时长或横移；7 天看优先级数量与工时，30 天按六级密度，点击回到当天。
+- `AdaptiveDayView` 被 1/3 天共用，周/月单独渲染统计。
+
+**验证**：`legacy-timeline-layout.test.ts` 覆盖条目过滤与跨零点时长；`timeline-adaptive.test.ts` 覆盖聚合、lane、跨日统计和密度；Playwright 覆盖详情编辑、切换、月视图跳转、拖拽及窄屏。系统保留 3536 时可仅为测试设置 `E2E_PORT`，不改变 `npm run dev` 端口。
 
 ## 数据版本迁移
 

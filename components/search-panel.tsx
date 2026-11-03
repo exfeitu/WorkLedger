@@ -6,6 +6,8 @@ type SearchPanelProps = {
   results: SearchResult[];
   query: string;
   onQueryChange: (value: string) => void;
+  /** 全量可选标签（预设 + 自定义 + 数据中出现过的）；未传时回退为从结果派生。 */
+  availableTags?: string[];
   inputRef?: React.Ref<HTMLInputElement>;
 };
 
@@ -34,12 +36,16 @@ function highlight(text: string, query: string): React.ReactNode {
   return parts;
 }
 
-export function SearchPanel({ results, query, onQueryChange, inputRef }: SearchPanelProps) {
+export function SearchPanel({ results, query, onQueryChange, availableTags, inputRef }: SearchPanelProps) {
   const [kind, setKind] = useState<SearchResult["kind"] | "all">("all");
   const [tag, setTag] = useState("");
   const [sort, setSort] = useState<SearchSort>("default");
-  const tags = useMemo(() => [...new Set([...results.flatMap((result) => result.tags), ...(tag ? [tag] : [])])]
-    .sort((a, b) => a.localeCompare(b, "zh-CN")), [results, tag]);
+  // 选项来自全量标签；附带当前结果与已选值，避免筛选过程中选项跳动。
+  const tags = useMemo(() => {
+    const merged = new Set([...(availableTags ?? []), ...results.flatMap((result) => result.tags)]);
+    if (tag) merged.add(tag);
+    return Array.from(merged).sort((a, b) => a.localeCompare(b, "zh-CN"));
+  }, [availableTags, results, tag]);
   const visibleResults = useMemo(() => filterAndSortResults(results, kind, tag, sort), [results, kind, tag, sort]);
   const hasFilters = kind !== "all" || tag !== "";
   const kindLabel = (kind: SearchResult["kind"]) => {

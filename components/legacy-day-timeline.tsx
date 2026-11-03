@@ -18,13 +18,12 @@ import {
   TRACK_PADDING,
   TimelineItem,
   assignLanes,
+  buildTimelineItems,
   buildWeekBrackets,
   endOfDay,
-  eventToTimeline,
   formatClock,
   formatDayLabel,
   startOfDay,
-  todoToTimeline,
 } from "@/lib/legacy-timeline-layout";
 
 type LegacyDayTimelineProps = {
@@ -139,16 +138,11 @@ export function LegacyDayTimeline({ events, todos = [], linkedTodoTitles = {}, o
     return () => ro.disconnect();
   }, []);
 
-  // 合并 events 和 todos 为统一的时间轴条目
-  const allItems = useMemo<TimelineItem[]>(() => {
-    const eventItems = events.map(eventToTimeline);
-    const todoItems = todos
-      .filter((t) => t.status !== "cancelled")
-      .map(todoToTimeline);
-    return [...eventItems, ...todoItems].sort(
-      (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-    );
-  }, [events, todos]);
+  // 合并 events 和 todos 为统一的时间轴条目（已完成/已取消的待办不绘制）
+  const allItems = useMemo<TimelineItem[]>(
+    () => buildTimelineItems(events, todos),
+    [events, todos],
+  );
 
   const todayStart = useMemo(() => startOfDay(new Date().toISOString()), []);
 
@@ -462,9 +456,9 @@ export function LegacyDayTimeline({ events, todos = [], linkedTodoTitles = {}, o
       {!hasExternalToolbar && (
         <div className="line-timeline-toolbar">
           <input type="date" aria-label="旧版跳转日期" value={jumpDate} onChange={event => setJumpDate(event.target.value)} />
-          <button className="axis-zoom-button" onClick={() => setScale(Math.min(MAX_SCALE, scale + SCALE_STEP))} type="button">＋</button>
+          <button className="axis-zoom-button" aria-label="缩小时间轴" onClick={() => setScale(Math.max(MIN_SCALE, scale - SCALE_STEP))} type="button">－</button>
           <span className="axis-zoom-value axis-zoom-value-inline">{Math.round(scale * 100)}%</span>
-          <button className="axis-zoom-button" onClick={() => setScale(Math.max(MIN_SCALE, scale - SCALE_STEP))} type="button">－</button>
+          <button className="axis-zoom-button" aria-label="放大时间轴" onClick={() => setScale(Math.min(MAX_SCALE, scale + SCALE_STEP))} type="button">＋</button>
           <span className="toolbar-sep" />
           <button className="axis-today-button" type="button" onClick={scrollToToday}>今天</button>
           <span className="toolbar-sep" />
