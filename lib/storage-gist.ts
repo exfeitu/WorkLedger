@@ -2,6 +2,7 @@ import { EventItem, MemoItem, TodoItem } from "@/types";
 import { CURRENT_DATA_VERSION, migrateData, parseVersion } from "@/lib/storage-migrate";
 import {
   loadCustomTags,
+  filterDeletedTags,
   loadEventsFromStorage,
   loadMemosFromStorage,
   loadTodosFromStorage,
@@ -439,7 +440,7 @@ export async function pushToCloud(
       finalTodos = todosResult.merged;
       finalMemos = memosResult.merged;
       // 标签合并：取并集（云端独有的也保留）
-      finalTags = Array.from(new Set([...tags, ...(remote.customTags ?? [])]));
+      finalTags = filterDeletedTags(Array.from(new Set([...tags, ...(remote.customTags ?? [])])));
       mergedFromRemote =
         eventsResult.fromRemote.length > 0 ||
         todosResult.fromRemote.length > 0 ||
@@ -518,7 +519,7 @@ export async function pullAndMerge(
     const eventsResult = mergeItems(localEvents, remoteEvents);
     const todosResult = mergeItems(localTodos, remoteTodos);
     const memosResult = mergeItems(localMemosArr, remoteMemos);
-    const mergedTags = Array.from(new Set([...localTags, ...remoteTags]));
+    const mergedTags = filterDeletedTags(Array.from(new Set([...localTags, ...remoteTags])));
 
     setSyncStatus("success");
     return {

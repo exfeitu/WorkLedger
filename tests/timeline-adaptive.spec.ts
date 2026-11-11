@@ -25,8 +25,8 @@ async function loadFixture(page: Page, data = { events, todos }, legacy = false)
     buffer: Buffer.from(JSON.stringify({ version: 3, ...data, memos: [], customTags: [] })) });
   await expect(dialog.getByText(/导入成功/)).toBeVisible();
   await dialog.getByRole("button", { name: "关闭", exact: true }).click();
-  await expect(page.locator(".legacy-timeline")).toBeVisible();
-  if (!legacy) await page.getByRole("button", { name: "切换到新版时间轴", exact: true }).click();
+  const switchButton = page.getByRole("button", { name: legacy ? "切换到旧版时间轴" : "切换到新版时间轴", exact: true });
+  if (await switchButton.count()) await switchButton.click();
   await page.getByLabel(legacy ? "旧版跳转日期" : "跳转日期", { exact: true }).fill(date);
 }
 

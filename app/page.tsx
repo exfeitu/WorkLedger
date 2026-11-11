@@ -455,6 +455,7 @@ export default function HomePage() {
       {showTaskFormPanel && (
         <TaskFormPanel
           customTags={customTags}
+          onTagDeleted={handleTagDeleted}
           onTagCreated={handleTagCreated}
           onSave={handleSaveTask}
           onClose={() => setShowTaskFormPanel(false)}
@@ -481,6 +482,7 @@ export default function HomePage() {
       {editingTodo && (
         <TaskFormPanel
           editTodo={editingTodo}
+          onTagDeleted={handleTagDeleted}
           customTags={customTags}
           onTagCreated={handleTagCreated}
           onSave={handleSaveTask}

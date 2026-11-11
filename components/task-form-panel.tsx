@@ -10,12 +10,13 @@ type TaskFormPanelProps = {
   editTodo?: TodoItem;
   customTags?: string[];
   onTagCreated?: (tag: string) => void;
+  onTagDeleted?: (tag: string) => void;
   onSave: (todo: TodoItem) => void;
   onDelete?: (id: string) => void;
   onClose: () => void;
 };
 
-export function TaskFormPanel({ editTodo, customTags = [], onTagCreated, onSave, onDelete, onClose }: TaskFormPanelProps) {
+export function TaskFormPanel({ editTodo, customTags = [], onTagCreated, onTagDeleted, onSave, onDelete, onClose }: TaskFormPanelProps) {
   const isEdit = !!editTodo;
   const panelRef = useRef<HTMLDivElement>(null);
   useFocusTrap(panelRef, true);
@@ -217,6 +218,7 @@ export function TaskFormPanel({ editTodo, customTags = [], onTagCreated, onSave,
           <label className="record-label">标签</label>
           <div className="record-tags-row">
             {allTags.map((tag) => (
+              <span key={tag}>
               <button
                 key={tag}
                 type="button"
@@ -225,6 +227,9 @@ export function TaskFormPanel({ editTodo, customTags = [], onTagCreated, onSave,
               >
                 {tag}
               </button>
+              {!BASE_TAGS.includes(tag) && onTagDeleted && <button type="button" className="chip-remove" title={`删除标签"${tag}"`}
+                onClick={() => { onTagDeleted(tag); setSelectedTags(prev => prev.filter(t => t !== tag)); }}>×</button>}
+              </span>
             ))}
           </div>
           <div className="record-custom-tag">

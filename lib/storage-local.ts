@@ -182,13 +182,21 @@ export function saveMemosToStorage(memos: MemoItem[]): void {
 /**
  * 读取用户自定义标签列表
  */
+export function filterDeletedTags(tags: string[]): string[] {
+  if (typeof window === "undefined") return tags;
+  try {
+    const deleted = JSON.parse(localStorage.getItem("work-ledger-deleted-tags") ?? "[]") as string[];
+    return tags.filter(tag => !deleted.includes(tag));
+  } catch { return tags; }
+}
+
 export function loadCustomTags(): string[] {
   if (typeof window === "undefined") return [];
   ensureStorageNamespace();
 
   try {
     const data = localStorage.getItem(STORAGE_KEY_CUSTOM_TAGS);
-    return data ? (JSON.parse(data) as string[]) : [];
+    return filterDeletedTags(data ? (JSON.parse(data) as string[]) : []);
   } catch {
     return [];
   }
@@ -212,6 +220,10 @@ export function saveCustomTags(tags: string[]): void {
  * 追加一个新的自定义标签
  */
 export function addCustomTag(tag: string): string[] {
+  if (typeof window !== "undefined") {
+    const deleted = JSON.parse(localStorage.getItem("work-ledger-deleted-tags") ?? "[]") as string[];
+    localStorage.setItem("work-ledger-deleted-tags", JSON.stringify(deleted.filter(t => t !== tag.trim())));
+  }
   const current = loadCustomTags();
   if (!tag.trim() || current.includes(tag.trim())) return current;
   const next = [...current, tag.trim()];
@@ -223,6 +235,10 @@ export function addCustomTag(tag: string): string[] {
  * 删除一个自定义标签
  */
 export function removeCustomTag(tag: string): string[] {
+  if (typeof window !== "undefined") {
+    const deleted = JSON.parse(localStorage.getItem("work-ledger-deleted-tags") ?? "[]") as string[];
+    localStorage.setItem("work-ledger-deleted-tags", JSON.stringify([...new Set([...deleted, tag])]));
+  }
   const current = loadCustomTags();
   const next = current.filter((t) => t !== tag);
   saveCustomTags(next);
@@ -239,19 +255,19 @@ export function setCustomTags(tags: string[]): string[] {
 }
 
 /**
- * 时间轴版本：classic（经典版，默认）或 adaptive（新版自适应）。
+ * 时间轴版本：classic（经典版）或 adaptive（新版自适应，默认）。
  * 只是界面偏好，不进入 Gist 同步，也不需要版本迁移。
  */
 export type TimelineMode = "classic" | "adaptive";
 
 export function loadTimelineMode(): TimelineMode {
-  if (typeof window === "undefined") return "classic";
+  if (typeof window === "undefined") return "adaptive";
   ensureStorageNamespace();
 
   try {
-    return localStorage.getItem(STORAGE_KEY_TIMELINE_MODE) === "adaptive" ? "adaptive" : "classic";
+    return localStorage.getItem(STORAGE_KEY_TIMELINE_MODE) === "classic" ? "classic" : "adaptive";
   } catch {
-    return "classic";
+    return "adaptive";
   }
 }
 

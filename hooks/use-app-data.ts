@@ -12,6 +12,7 @@ import {
   loadSettings,
   loadCustomTags,
   addCustomTag as addTag,
+  removeCustomTag,
   saveCustomTags,
   getSyncStatus,
   getSyncError,
@@ -179,7 +180,7 @@ export function useAppData(): AppData {
   );
 
   const deleteCustomTag = useCallback(
-    (tag: string) => setTagsState((prev) => prev.filter((t) => t !== tag)),
+    (tag: string) => setTagsState(removeCustomTag(tag)),
     [],
   );
 

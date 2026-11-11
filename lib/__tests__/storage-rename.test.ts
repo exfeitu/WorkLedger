@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LEGACY_STORAGE_KEYS } from "@/lib/storage-legacy";
-import { loadEventsFromStorage, loadTodosFromStorage } from "@/lib/storage-local";
 import { loadSettings } from "@/lib/storage-gist";
+import { addCustomTag, removeCustomTag, filterDeletedTags, loadCustomTags, loadTimelineMode, saveTimelineMode } from "@/lib/storage-local";
 
 class MemoryStorage {
   private data = new Map<string, string>();
@@ -23,7 +23,23 @@ function installStorage() {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Work Ledger storage rename", () => {
-  it("moves legacy event/todo keys into the new namespace on first read", () => {
+  it("defaults to adaptive while retaining an explicit classic preference", () => {
+    installStorage();
+    expect(loadTimelineMode()).toBe("adaptive");
+    saveTimelineMode("classic");
+    expect(loadTimelineMode()).toBe("classic");
+  });
+  it("removes numeric tags and filters remote resurrection, with explicit re-add supported", () => {
+    installStorage();
+    addCustomTag("1");
+    expect(removeCustomTag("1")).toEqual([]);
+    expect(loadCustomTags()).toEqual([]);
+    expect(filterDeletedTags(["1", "工作"])).toEqual(["工作"]);
+    expect(addCustomTag("1")).toEqual(["1"]);
+  });
+  it("moves legacy event/todo keys into the new namespace on first read", async () => {
+    vi.resetModules();
+    const { loadEventsFromStorage, loadTodosFromStorage } = await import("@/lib/storage-local");
     const storage = installStorage();
     storage.setItem(LEGACY_STORAGE_KEYS.events, JSON.stringify([{ id: "e1" }]));
     storage.setItem(LEGACY_STORAGE_KEYS.todos, JSON.stringify([{ id: "t1" }]));

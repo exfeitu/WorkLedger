@@ -30,6 +30,7 @@ export {
   saveCustomTags,
   addCustomTag,
   removeCustomTag,
+  filterDeletedTags,
   setCustomTags,
   loadTimelineMode,
   saveTimelineMode,
