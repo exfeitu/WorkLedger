@@ -1,4 +1,10 @@
-import type { EventItem, TodoItem, TodoStatus } from "@/types";
+import type { EventItem, TodoItem, TodoStatus, MemoItem } from "@/types";
+
+export function removeTagFromLedger(state: LedgerSnapshot & { memos: MemoItem[] }, tag: string, updatedAt: string) {
+  const remove = <T extends { tags: string[]; updatedAt: string }>(items: T[]): T[] =>
+    items.map(item => item.tags.includes(tag) ? { ...item, tags: item.tags.filter(t => t !== tag), updatedAt } : item);
+  return { ...syncLinkedItems(remove(state.events), remove(state.todos)), memos: remove(state.memos) };
+}
 import { syncLinkedItems } from "@/lib/utils";
 
 /**

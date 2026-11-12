@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { EventItem, TodoItem } from "@/types";
 import {
-  deleteTodos, deleteWorkRecord, restoreTodo, setTodosStatus,
+  deleteTodos, deleteWorkRecord, restoreTodo, setTodosStatus, removeTagFromLedger,
   upsertTodo, upsertWorkRecord, type LedgerSnapshot,
 } from "@/lib/ledger-operations";
 
@@ -18,6 +18,18 @@ const record = (id: string): EventItem => ({
 const empty = (): LedgerSnapshot => ({ events: [], todos: [] });
 
 describe("ledger operations", () => {
+  it("removes a tag across records, todos and memos without deleting their contents", () => {
+    const original = { events: [{ ...record("record"), tags: ["1", "保留"] }],
+      todos: [{ ...task("todo"), tags: ["1"] }],
+      memos: [{ id: "memo", type: "note" as const, title: "笔记", content: "保留正文", tags: ["1"], createdAt: timestamp, updatedAt: timestamp }] };
+    const result = removeTagFromLedger(original, "1", "2026-11-12T12:00:00.000Z");
+    expect(result.events[0].tags).toEqual(["保留"]);
+    expect(result.todos[0].tags).toEqual([]);
+    expect(result.memos[0].tags).toEqual([]);
+    expect(result.memos[0].content).toBe("保留正文");
+    expect(result.todos[0].updatedAt).not.toBe(timestamp);
+    expect(original.todos[0].tags).toEqual(["1"]);
+  });
   it("creates and updates tasks without mutating the previous snapshot", () => {
     const original = empty();
     const added = upsertTodo(original, task("a"));

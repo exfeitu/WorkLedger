@@ -10,7 +10,7 @@ type TaskFormPanelProps = {
   editTodo?: TodoItem;
   customTags?: string[];
   onTagCreated?: (tag: string) => void;
-  onTagDeleted?: (tag: string) => void;
+  onTagDeleted?: (tag: string) => boolean | void;
   onSave: (todo: TodoItem) => void;
   onDelete?: (id: string) => void;
   onClose: () => void;
@@ -228,7 +228,7 @@ export function TaskFormPanel({ editTodo, customTags = [], onTagCreated, onTagDe
                 {tag}
               </button>
               {!BASE_TAGS.includes(tag) && onTagDeleted && <button type="button" className="chip-remove" title={`删除标签"${tag}"`}
-                onClick={() => { onTagDeleted(tag); setSelectedTags(prev => prev.filter(t => t !== tag)); }}>×</button>}
+                onClick={() => { if (onTagDeleted(tag) !== false) setSelectedTags(prev => prev.filter(t => t !== tag)); }}>×</button>}
               </span>
             ))}
           </div>

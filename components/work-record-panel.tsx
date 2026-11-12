@@ -13,7 +13,7 @@ type WorkRecordPanelProps = {
   editEvent?: EventItem;
   customTags?: string[];
   onTagCreated?: (tag: string) => void;
-  onTagDeleted?: (tag: string) => void;
+  onTagDeleted?: (tag: string) => boolean | void;
   onSave: (event: EventItem, linkedTodoId: string | null) => void;
   onDelete?: (id: string) => void;
   onClose: () => void;
@@ -286,7 +286,7 @@ export function WorkRecordPanel({ events, todos, linkedTodoTitles, editEvent, cu
                     <button
                       type="button"
                       className="chip-remove"
-                      onClick={(e) => { e.stopPropagation(); onTagDeleted(tag); }}
+                      onClick={(e) => { e.stopPropagation(); if (onTagDeleted(tag) !== false) setSelectedTags(prev => prev.filter(t => t !== tag)); }}
                       title={`删除标签"${tag}"`}
                       style={{ marginLeft: "-4px", padding: "2px 4px", fontSize: "0.65rem", border: "none", background: "none", cursor: "pointer", color: "var(--muted)", opacity: 0.6 }}
                     >

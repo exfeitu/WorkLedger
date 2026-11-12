@@ -10,6 +10,10 @@ test("新版默认打开，测试标签可删除并保持删除状态", async ({
   await expect(dialog.getByText(/导入成功/)).toBeVisible();
   await dialog.getByRole("button", { name: "关闭", exact: true }).click();
   await page.getByRole("button", { name: "+ 添加任务", exact: true }).click();
+  page.once("dialog", dialog => dialog.dismiss());
+  await page.getByTitle('删除标签"1"', { exact: true }).click();
+  await expect(page.getByTitle('删除标签"1"', { exact: true })).toBeVisible();
+  page.once("dialog", dialog => dialog.accept());
   await page.getByTitle('删除标签"1"', { exact: true }).click();
   await expect(page.getByRole("dialog").getByRole("button", { name: "1", exact: true })).toHaveCount(0);
   await page.reload();

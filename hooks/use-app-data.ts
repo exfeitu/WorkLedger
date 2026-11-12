@@ -20,6 +20,7 @@ import {
   onSyncChange,
 } from "@/lib/storage";
 import { syncLinkedItems } from "@/lib/utils";
+import { removeTagFromLedger } from "@/lib/ledger-operations";
 import type { MemoItem } from "@/types";
 
 type SyncedData = ReturnType<typeof syncLinkedItems>;
@@ -36,7 +37,7 @@ export type AppData = SyncedData & {
   canUndo: boolean;
   canUndoMemos: boolean;
   addCustomTag: (tag: string) => void;
-  deleteCustomTag: (tag: string) => void;
+  deleteCustomTag: (tag: string) => boolean;
   setCustomTags: (tags: string[]) => void;
   setData: (data: SyncedData) => void;
   setMemos: (memos: MemoItem[]) => void;
@@ -180,8 +181,20 @@ export function useAppData(): AppData {
   );
 
   const deleteCustomTag = useCallback(
-    (tag: string) => setTagsState(removeCustomTag(tag)),
-    [],
+    (tag: string) => {
+      const references = [
+        ...events.filter(item => item.tags.includes(tag)).map(item => `工作记录：${item.title}`),
+        ...todos.filter(item => item.tags.includes(tag)).map(item => `待办：${item.title}`),
+        ...memos.filter(item => item.tags.includes(tag)).map(item => `备忘录：${item.title}`),
+      ];
+      if (!window.confirm(`删除标签“${tag}”？\n${references.length ? `以下 ${references.length} 项关联了此标签：\n${references.join("\n")}` : "没有已保存的关联条目。"}\n\n确认后从以上条目中移除该标签，保留条目及其他标签。`)) return false;
+      const next = removeTagFromLedger({ events, todos, memos }, tag, new Date().toISOString());
+      setData({ events: next.events, todos: next.todos });
+      setMemosState(next.memos);
+      setTagsState(removeCustomTag(tag));
+      return true;
+    },
+    [events, todos, memos],
   );
 
   const setCustomTags = useCallback((tags: string[]) => {
